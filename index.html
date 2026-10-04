@@ -1,0 +1,1574 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="A shared walking log that draws our kilometres as a pencil line around the equator.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23EEF1F4'/%3E%3Ccircle cx='32' cy='32' r='20' fill='none' stroke='%23557A26' stroke-width='6'/%3E%3Ccircle cx='32' cy='12' r='6' fill='%23F2B705' stroke='%231D2126' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23EEF1F4'/%3E%3Ccircle cx='32' cy='32' r='20' fill='none' stroke='%23557A26' stroke-width='6'/%3E%3Ccircle cx='32' cy='12' r='6' fill='%23F2B705' stroke='%231D2126' stroke-width='2'/%3E%3C/svg%3E">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Walk the Equator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Caveat:wght@500;700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: one narrow column. Pencil ring on graph paper, then the live landscape, the log card, tabs (walkers, postcards, passport, ideas, route), the numbers. Light = daytime sky, dark = night sky. */
+:root{
+  --paper:#EEF1F4; --card:#FBFCFD; --wash:#E2E7EC; --grid:#E2E7EC; --ink:#1D2126; --ink-2:#56606B; --line:#C9D0D8;
+  --land:#557A26; --sea:#4F86B8; --pencil:#F2B705; --on-pencil:#1D2126; --danger:#B3261E;
+  --sky:#BFDCEE; --sky-2:#EEF6F9; --sun:#F6C445; --stars:0;
+  --far:#A3BCCB; --far-2:#8099AB; --snow:#FFFFFF;
+  --leaf:#5A9440; --leaf-2:#3A7130; --trunk:#7A5A3A; --dry:#A3A063;
+  --grass:#9CC468; --sand:#EBD9A8; --savanna:#DDBE6A; --soil:#C98F55; --lava:#4A4643; --rock:#8E857C;
+  --water:#4F8FC0; --water-2:#94C0DD; --wave:#DCEDF7; --hide:#E9C98F; --hair:#3B2A21;
+  --display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --hand:"Caveat","Bradley Hand","Segoe Print","Comic Sans MS",cursive;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#121519; --card:#181C21; --wash:#22272E; --grid:#1E2329; --ink:#E7EAEE; --ink-2:#99A3AE; --line:#313840;
+  --land:#9BBE57; --sea:#6E9FCB; --pencil:#F5C21B; --on-pencil:#1D2126; --danger:#F28B82;
+  --sky:#0F1925; --sky-2:#243650; --sun:#ECE7D2; --stars:1;
+  --far:#2C3E53; --far-2:#22323F; --snow:#C9D3DC;
+  --leaf:#3D6B33; --leaf-2:#2A5124; --trunk:#5A4430; --dry:#5E5E3C;
+  --grass:#34522A; --sand:#6D6246; --savanna:#6E5E33; --soil:#6B4A2E; --lava:#272524; --rock:#57514B;
+  --water:#1F4466; --water-2:#2C5678; --wave:#5A8AB0; --hide:#8A7550; --hair:#5C4434; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#121519; --card:#181C21; --wash:#22272E; --grid:#1E2329; --ink:#E7EAEE; --ink-2:#99A3AE; --line:#313840;
+  --land:#9BBE57; --sea:#6E9FCB; --pencil:#F5C21B; --on-pencil:#1D2126; --danger:#F28B82;
+  --sky:#0F1925; --sky-2:#243650; --sun:#ECE7D2; --stars:1;
+  --far:#2C3E53; --far-2:#22323F; --snow:#C9D3DC;
+  --leaf:#3D6B33; --leaf-2:#2A5124; --trunk:#5A4430; --dry:#5E5E3C;
+  --grass:#34522A; --sand:#6D6246; --savanna:#6E5E33; --soil:#6B4A2E; --lava:#272524; --rock:#57514B;
+  --water:#1F4466; --water-2:#2C5678; --wave:#5A8AB0; --hide:#8A7550; --hair:#5C4434; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:400 15px/1.55 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:22px 110px;display:flex;flex-direction:column;gap:24px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+h1{font-size:clamp(2.3rem,10vw,3.3rem);font-weight:800;letter-spacing:-.025em;line-height:.95;font-variation-settings:"opsz" 96}
+h2{font-size:1.3rem;font-weight:700;letter-spacing:-.01em;line-height:1.2;font-variation-settings:"opsz" 40}
+h3{font-size:1.02rem;font-weight:700;line-height:1.2}
+p{margin:0}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.eyebrow{font:500 11px/1.2 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2)}
+.lbl{font:500 11px/1.2 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:.45}
+
+/* header */
+.top{display:flex;flex-direction:column;gap:10px}
+.lede{color:var(--ink-2);max-width:46ch}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;background:var(--wash);border-radius:12px;margin-top:6px}
+.seg button{appearance:none;border:0;background:transparent;color:var(--ink-2);font:600 14px/1.2 var(--body);padding:9px 8px;border-radius:9px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.seg button span{font:400 11px/1 var(--mono)}
+.seg button[aria-pressed="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.viewbar{display:flex;flex-direction:column;gap:7px}
+
+/* chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:7px 12px 7px 9px;border-radius:999px;border:1px solid var(--line);background:var(--card);font-weight:500;font-size:14px;max-width:100%}
+.chip[aria-pressed="true"]{border-color:var(--ink);background:var(--wash);font-weight:600}
+.chip .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dot{width:12px;height:12px;border-radius:50%;flex:none;background:var(--c,var(--ink-2))}
+.dot.team{background:var(--ink);box-shadow:inset 0 0 0 3px var(--card),0 0 0 1px var(--ink)}
+
+/* ring */
+.ring-wrap{border:1px solid var(--line);border-radius:18px;padding:6px;background-color:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:18px 18px;background-position:-1px -1px}
+#ring{display:block;width:100%;height:auto;max-width:440px;margin:0 auto}
+.legend{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 16px;padding:4px 8px 10px;font:400 11.5px/1.3 var(--mono);color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.lg{display:inline-block;width:18px;height:0}
+.lg.land{border-top:6px solid var(--land)}
+.lg.sea{border-top:3px dotted var(--sea)}
+.r-disc{fill:var(--card);stroke:var(--line);stroke-width:1}
+.r-land{fill:none;stroke:var(--land);stroke-width:8}
+.r-land.tiny{stroke-width:6;stroke-linecap:round}
+.r-sea{fill:none;stroke:var(--sea);stroke-width:2.8;stroke-linecap:round;stroke-dasharray:.01 6.5}
+.r-sea.dim{opacity:.35}
+.r-tick{stroke:var(--ink);stroke-width:2;stroke-linecap:round}
+.r-hand{font-family:var(--hand);font-size:17px;font-weight:500;fill:var(--ink-2)}
+.r-start{font-size:16px;font-weight:700;fill:var(--ink)}
+.r-track{fill:none;stroke:var(--line);stroke-width:1.2}
+.r-prog{fill:none;stroke-width:6;stroke-linecap:round;stroke-linejoin:round}
+.r-tip{stroke:var(--card);stroke-width:2;transform-box:fill-box;transform-origin:center}
+.r-halo{fill:none;stroke:var(--pencil);stroke-width:3.5}
+.c-name{font-family:var(--hand);font-size:22px;font-weight:700;fill:var(--ink-2)}
+.c-km{font-family:var(--display);font-weight:800;font-size:38px;fill:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.c-km.long{font-size:31px}
+.c-sub,.c-pct{font-family:var(--mono);font-size:11px;fill:var(--ink-2)}
+.pulse{animation:pulse 1s ease-out 1}
+@keyframes pulse{0%{transform:scale(1)}30%{transform:scale(2)}100%{transform:scale(1)}}
+
+/* status */
+.status{background:var(--wash);border:1px dashed var(--line);border-radius:12px;padding:11px 13px;font-size:14px;color:var(--ink)}
+
+/* journey + scene */
+.here{display:flex;flex-direction:column;gap:8px}
+.here h2{font-size:1.6rem;font-weight:750;letter-spacing:-.02em}
+.scene-wrap{border:1px solid var(--line);border-radius:18px;overflow:hidden;background:var(--sky);margin-top:4px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#scene{display:block;width:100%;height:auto}
+.scene-tip{font-family:var(--hand);font-size:17px;color:var(--ink-2);line-height:1.1}
+.bar{height:10px;background:var(--wash);border-radius:6px;overflow:hidden;margin-top:4px}
+.bar span{display:block;height:100%;width:0;background:var(--ink);border-radius:6px;min-width:4px;transition:width .5s ease}
+.bar-labels{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font:400 12px/1.3 var(--mono);color:var(--ink-2)}
+.pace{color:var(--ink);max-width:52ch}
+
+/* scene drawing */
+.sk-sky{fill:var(--sky)} .sk-sun{fill:var(--sun)} .sk-stars{fill:var(--snow);opacity:var(--stars)}
+.sk-sea{fill:var(--water-2)} .horizon{stroke:var(--wave);stroke-width:1}
+.far{fill:var(--far)} .far2{fill:var(--far-2)} .snow{fill:var(--snow)}
+.t-leaf{fill:var(--leaf);stroke:var(--ink);stroke-width:.8;stroke-opacity:.3}
+.t-leaf2{fill:var(--leaf-2);stroke:var(--ink);stroke-width:.8;stroke-opacity:.3}
+.t-trunk{fill:var(--trunk)} .t-trunk-s{fill:none;stroke:var(--trunk);stroke-linecap:round}
+.t-dry{fill:var(--dry);stroke:var(--ink);stroke-width:.8;stroke-opacity:.25}
+.frond{fill:none;stroke:var(--leaf-2);stroke-width:2.6;stroke-linecap:round}
+.g-grass{fill:var(--grass)} .g-sand{fill:var(--sand)} .g-savanna{fill:var(--savanna)} .g-soil{fill:var(--soil)} .g-lava{fill:var(--lava)} .g-water{fill:var(--water)}
+.field-a{fill:var(--grass)} .field-b{fill:var(--leaf)} .row{fill:none;stroke:var(--leaf-2);stroke-width:1.2;stroke-dasharray:2 4}
+.wave{fill:none;stroke:var(--wave);stroke-width:1.4;stroke-linecap:round}
+.tuft{fill:none;stroke:var(--leaf-2);stroke-width:1.3;stroke-linecap:round}
+.rock{fill:var(--rock)}
+.shell-s{fill:var(--card);stroke:var(--rock);stroke-width:.8}
+.eqline{stroke:var(--pencil);stroke-width:2.2;stroke-dasharray:10 6}
+.hide{fill:var(--hide);stroke:var(--ink);stroke-width:1;stroke-opacity:.6}
+.spot{fill:var(--trunk)}
+.leg-s{stroke:var(--ink);stroke-width:1.6;stroke-opacity:.7;stroke-linecap:round}
+.shell{fill:var(--rock);stroke:var(--ink);stroke-width:1}
+.shell-l{fill:none;stroke:var(--ink);stroke-opacity:.45;stroke-width:.9}
+.whale{fill:var(--far-2);stroke:var(--ink);stroke-width:1}
+.bird-f{fill:none;stroke:var(--ink-2);stroke-width:1.3;stroke-linecap:round}
+.smoke{fill:var(--snow);opacity:.55}
+.mon{fill:var(--card);stroke:var(--ink);stroke-width:1.2}
+.mon-l{stroke:var(--pencil);stroke-width:2.2}
+.b-hull{fill:var(--trunk);stroke:var(--ink);stroke-width:1.2}
+.b-sail{fill:var(--card);stroke:var(--ink);stroke-width:1.2}
+.b-mast{stroke:var(--ink);stroke-width:1.4}
+.w-leg{stroke:var(--ink);stroke-width:2.2;stroke-linecap:round;transform-box:fill-box;transform-origin:center top}
+.w-body{stroke:var(--ink);stroke-width:1.4}
+.w-head{fill:var(--card);stroke:var(--ink);stroke-width:1.4}
+.w-eye{fill:var(--ink)}
+.w-ear{fill:var(--ink-2)}
+.w-beak{fill:var(--pencil);stroke:var(--ink);stroke-width:1}
+.w-tail{fill:none;stroke:var(--ink);stroke-width:2.4;stroke-linecap:round}
+.w-hair{fill:var(--hair);stroke:var(--ink);stroke-width:1;stroke-linejoin:round}
+.walking .pony{animation:wag .55s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:right top}
+.sc-label{font-family:var(--hand);font-size:21px;font-weight:700;fill:var(--ink);paint-order:stroke;stroke:var(--sky);stroke-width:4px;stroke-linejoin:round}
+.sc-coord{font-family:var(--mono);font-size:10px;fill:var(--ink-2);paint-order:stroke;stroke:var(--sky);stroke-width:3px;stroke-linejoin:round}
+.sc-name{font-family:var(--mono);font-size:9px;font-weight:500;fill:var(--ink);paint-order:stroke;stroke:var(--card);stroke-width:3px;stroke-linejoin:round}
+.bubble{fill:var(--card);stroke:var(--ink);stroke-width:1.3}
+.bubble-t{font-family:var(--hand);font-size:16px;font-weight:700;fill:var(--ink)}
+.s-far{animation:scroll 140s linear infinite}
+.s-mid{animation:scroll 40s linear infinite}
+.s-fg{animation:scroll 15s linear infinite}
+@keyframes scroll{to{transform:translateX(-400px)}}
+.walking .leg-a{animation:swingA .55s ease-in-out infinite alternate}
+.walking .leg-b{animation:swingB .55s ease-in-out infinite alternate}
+.walking .bob{animation:bob .275s ease-in-out infinite alternate}
+.walking .hop{animation:hop .38s ease-in-out infinite alternate}
+.walking .wing{animation:flap .19s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center}
+.walking .wag{animation:wag .3s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:right bottom}
+@keyframes swingA{from{transform:rotate(22deg)}to{transform:rotate(-22deg)}}
+@keyframes swingB{from{transform:rotate(-22deg)}to{transform:rotate(22deg)}}
+@keyframes bob{from{transform:translateY(0)}to{transform:translateY(-1.5px)}}
+@keyframes hop{from{transform:translateY(0)}to{transform:translateY(-4px)}}
+@keyframes flap{from{transform:scaleY(1)}to{transform:scaleY(.35)}}
+@keyframes wag{from{transform:rotate(-16deg)}to{transform:rotate(16deg)}}
+.sway{animation:sway 2.4s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center bottom}
+@keyframes sway{from{transform:rotate(-2.5deg) translateY(0)}to{transform:rotate(2.5deg) translateY(2px)}}
+.puff{animation:puff 4s ease-in-out infinite alternate}
+@keyframes puff{from{opacity:.2;transform:translateY(0)}to{opacity:.65;transform:translateY(-5px)}}
+
+/* log card */
+.log{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.log .chip{background:var(--paper)}
+.log .chip[aria-pressed="true"]{background:var(--wash)}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label.lbl .opt{text-transform:none;letter-spacing:0;font-family:var(--body);font-size:12px}
+input[type=text],input[type=number],input[type=date],textarea{width:100%;min-width:0;font:500 16px/1.35 var(--body);color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:11px 12px;appearance:none;-webkit-appearance:none}
+textarea{resize:vertical;min-height:64px;font-weight:400}
+input[type=number]{font-family:var(--mono)}
+input:focus,textarea:focus{outline:2px solid var(--ink);outline-offset:0;border-color:transparent}
+.check{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:var(--ink-2);cursor:pointer}
+.check input{width:18px;height:18px;accent-color:var(--ink)}
+.quick{display:flex;flex-wrap:wrap;gap:6px}
+.quick button{border:1px solid var(--line);background:transparent;border-radius:8px;padding:6px 11px;font:500 13px/1 var(--mono);color:var(--ink-2)}
+.quick button:hover{color:var(--ink);border-color:var(--ink-2)}
+.hint{font-size:13.5px;color:var(--ink-2)}
+.hint.warn{color:var(--ink)}
+.hint.err{color:var(--danger)}
+.primary{appearance:none;border:0;background:var(--pencil);color:var(--on-pencil);font:700 16px/1 var(--display);padding:15px;border-radius:12px;width:100%}
+.primary:hover:not(:disabled){filter:brightness(1.04)}
+
+/* tabs */
+.tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:none;margin-bottom:-8px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{appearance:none;border:0;background:none;padding:10px 10px 11px;font:600 14.5px/1 var(--body);color:var(--ink-2);border-bottom:3px solid transparent;white-space:nowrap;display:inline-flex;align-items:baseline;gap:6px}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--pencil)}
+.tab .ct{font:500 11px/1 var(--mono);color:var(--ink-2)}
+.panel{display:flex;flex-direction:column;gap:14px}
+.head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.link{appearance:none;border:0;background:none;padding:4px 0;font:600 14px/1 var(--body);color:var(--ink-2);text-decoration:underline;text-underline-offset:3px}
+.together{font-size:15px}
+.together b{font-family:var(--mono);font-weight:500}
+.empty{color:var(--ink-2);font-size:14px;padding:6px 0;list-style:none}
+
+/* walkers */
+.wlist,.rlist,.rtlist,.ideas{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.walker{border-bottom:1px solid var(--line)}
+.walker:first-child{border-top:1px solid var(--line)}
+.w-main{appearance:none;border:0;background:transparent;width:100%;text-align:left;display:grid;grid-template-columns:20px 34px minmax(0,1fr) auto;align-items:center;column-gap:10px;row-gap:4px;padding:10px 8px;border-radius:10px}
+.w-main[aria-pressed="true"]{background:var(--wash)}
+.w-rank{font:500 12px/1 var(--mono);color:var(--ink-2);text-align:right}
+.w-av{width:34px;height:38px;grid-row:span 2}
+.w-av svg{width:100%;height:100%;display:block}
+.w-name{font-weight:600;font-size:15.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.w-km{font:500 14px/1 var(--mono);text-align:right;white-space:nowrap}
+.w-meta{grid-column:3 / 5;font-size:12.5px;color:var(--ink-2)}
+.w-mini{grid-column:1 / 5;height:4px;background:var(--wash);border-radius:3px;overflow:hidden}
+.w-main[aria-pressed="true"] .w-mini{background:var(--card)}
+.w-mini span{display:block;height:100%;min-width:3px;border-radius:3px;background:var(--c)}
+.w-edit{display:flex;flex-direction:column;gap:10px;padding:2px 8px 14px}
+.w-edit .row{display:flex;flex-wrap:wrap;gap:8px}
+.w-edit input{flex:1 1 160px}
+.btn{appearance:none;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:10px 14px;font:600 14px/1 var(--body);color:var(--ink)}
+.btn.danger{color:var(--danger)}
+.btn.danger.armed{background:var(--danger);color:var(--card);border-color:var(--danger)}
+.avpick{display:flex;flex-wrap:wrap;gap:6px}
+.av{appearance:none;border:1px solid var(--line);background:var(--paper);border-radius:10px;padding:4px 8px 4px 4px;display:inline-flex;align-items:center;gap:4px;font:500 13px/1 var(--body);color:var(--ink-2)}
+.av svg{width:28px;height:32px;display:block}
+.av[aria-pressed="true"]{border-color:var(--ink);color:var(--ink);background:var(--wash)}
+.add{display:flex;flex-direction:column;gap:8px;padding-top:6px}
+.add-row{display:flex;gap:8px}
+.add-row input{flex:1 1 auto}
+.sub-h{font:700 1.05rem/1.2 var(--display);margin-top:8px}
+
+/* recent walks */
+.rw{display:grid;grid-template-columns:12px minmax(0,1fr) auto auto;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+.rw:first-child{border-top:1px solid var(--line)}
+.rw-open{appearance:none;border:0;background:none;padding:11px 0;text-align:left;display:flex;gap:10px;min-width:0;align-items:baseline}
+.rw-date{font:400 12.5px/1.2 var(--mono);color:var(--ink-2);white-space:nowrap}
+.rw-name{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rw-km{font:500 14px/1 var(--mono);white-space:nowrap}
+.rw-del{appearance:none;border:0;background:none;font:500 12.5px/1 var(--body);color:var(--ink-2);padding:8px 2px}
+.rw-del.armed{color:var(--danger);font-weight:700}
+
+/* postcards */
+.pc-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.pc{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.pc-art{aspect-ratio:400/130;max-width:100%;background:var(--sky);border-bottom:1px solid var(--line)}
+.pc-art svg{display:block;width:100%;height:100%}
+.pc.locked .pc-art{filter:grayscale(1);opacity:.4}
+.pc-body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:5px}
+.pc-km{font:400 11px/1.2 var(--mono);color:var(--ink-2)}
+.pc-when{font-family:var(--hand);font-size:18px;line-height:1;color:var(--ink)}
+.pc-fact{font-size:13.5px;line-height:1.45}
+.pc.locked h3{color:var(--ink-2)}
+.pc-lock{font-size:13px;color:var(--ink-2)}
+
+/* passport */
+.pp{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}
+.stamp svg{display:block;width:100%;height:auto;max-width:100%}
+.st-ring{fill:none;stroke-width:3}
+.st-ring2{fill:none;stroke-width:1.2}
+.st-name{font-family:var(--mono);font-weight:700;font-size:10px;letter-spacing:.04em}
+.st-small{font-family:var(--mono);font-size:7.5px;letter-spacing:.06em}
+.st-lock .st-ring{stroke:var(--line);stroke-dasharray:4 4}
+.st-lock text{fill:var(--ink-2);opacity:.6}
+
+/* ideas */
+.idea-new{display:flex;flex-direction:column;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
+.idea-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.idea{border-bottom:1px solid var(--line);padding:12px 0;display:flex;flex-direction:column;gap:6px}
+.idea:first-child{border-top:1px solid var(--line)}
+.idea-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font:400 12px/1.2 var(--mono);color:var(--ink-2)}
+.idea-text{white-space:pre-wrap;overflow-wrap:anywhere;font-size:15px}
+.ptag{font:500 10.5px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:3px 6px;border-radius:5px;background:var(--wash);color:var(--ink-2)}
+.idea-top .rw-del{margin-left:auto}
+
+/* route */
+.route-sub{font-size:13px;color:var(--ink-2)}
+.rt{display:grid;grid-template-columns:22px minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.rt-mark{height:0;width:22px}
+.rt.land .rt-mark{border-top:6px solid var(--land)}
+.rt.sea .rt-mark{border-top:3px dotted var(--sea)}
+.rt-name{min-width:0}
+.rt-name small{display:block;font-size:12px;color:var(--ink-2)}
+.rt-km{font:400 12.5px/1.2 var(--mono);color:var(--ink-2);text-align:right;white-space:nowrap}
+.rt.passed .rt-name{color:var(--ink-2)}
+.rt.here .rt-name{font-weight:700}
+.tag{display:inline-block;font:500 10.5px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:3px 6px;border-radius:5px;margin-left:6px;vertical-align:2px}
+.tag.here{background:var(--pencil);color:var(--on-pencil)}
+.tag.done{background:var(--wash);color:var(--ink-2)}
+
+/* auth + data */
+.authbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--ink-2)}
+.authbar .who{overflow-wrap:anywhere}
+.authbar .primary{width:auto;padding:12px 18px}
+.datazone{display:flex;flex-direction:column;gap:8px;padding-top:6px}
+.row-btns{display:flex;flex-wrap:wrap;gap:8px}
+.btn.armed{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+/* numbers */
+.block{display:flex;flex-direction:column;gap:12px;padding-top:22px;border-top:1px solid var(--line)}
+.numbers dl{margin:0;display:flex;flex-direction:column}
+.numbers dl div{display:flex;justify-content:space-between;gap:16px;padding:9px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.numbers dt{color:var(--ink-2);font-size:14px}
+.numbers dd{margin:0;font:500 14px/1.4 var(--mono)}
+.fine{font-size:13px;color:var(--ink-2);max-width:60ch}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);border-radius:12px;padding:11px 16px;font-size:14.5px;font-weight:500;max-width:calc(100% - 32px);width:max-content;box-shadow:0 6px 24px rgba(0,0,0,.25);z-index:10}
+
+@media (max-width:360px){.fields{grid-template-columns:1fr}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <p class="eyebrow">Latitude 0°00′00″ · one long pencil line</p>
+    <h1>Walk the Equator</h1>
+    <p class="lede">Draw a line all the way round the middle of the Earth, one walk at a time. Log your kilometres, collect postcards and stamps from the places you pass, and bring your friends along.</p>
+    <div class="seg" role="group" aria-label="Which route to measure against">
+      <button type="button" id="mode-whole" aria-pressed="true">Whole equator <span>40,075 km</span></button>
+      <button type="button" id="mode-land" aria-pressed="false">Land only <span>≈ 8,714 km</span></button>
+    </div>
+    <div class="authbar" id="authbar" hidden></div>
+  </header>
+
+  <p id="status" class="status" role="status" hidden></p>
+
+  <div class="viewbar" id="viewbar" hidden>
+    <span class="lbl" id="view-lbl">Showing</span>
+    <div class="chips" id="view" role="group" aria-labelledby="view-lbl"></div>
+  </div>
+
+  <section class="ring-wrap" aria-label="Progress around the equator">
+    <svg id="ring" viewBox="-16 -16 432 432" role="img" aria-label="The equator as a ring, with one lane per walker"></svg>
+    <div class="legend">
+      <span><i class="lg land"></i>land</span>
+      <span><i class="lg sea"></i>sea</span>
+      <span id="lanes-note">one ring per walker, starting at the Gabon coast</span>
+    </div>
+  </section>
+
+  <section class="here" aria-labelledby="here-title">
+    <p class="eyebrow" id="here-who">Where you are</p>
+    <h2 id="here-title">Loading the walk…</h2>
+    <div class="scene-wrap" id="scene-wrap" role="button" tabindex="0" aria-label="Landscape where the walker is. Tap to hear what they say.">
+      <svg id="scene" viewBox="0 0 400 190" aria-hidden="true"></svg>
+    </div>
+    <p class="scene-tip">Tap the picture to hear what your walker thinks.</p>
+    <div class="bar" id="here-barwrap" hidden><span id="here-bar"></span></div>
+    <div class="bar-labels"><span id="here-in"></span><span id="here-next"></span></div>
+    <p class="pace" id="here-pace"></p>
+  </section>
+
+  <section class="log" id="log" aria-labelledby="log-h">
+    <h2 id="log-h">Log a walk</h2>
+    <div class="field">
+      <span class="lbl" id="who-lbl">Who walked</span>
+      <div class="chips" id="who" role="group" aria-labelledby="who-lbl"></div>
+    </div>
+    <div class="fields">
+      <div class="field"><label class="lbl" for="log-date">Date</label><input type="date" id="log-date"></div>
+      <div class="field"><label class="lbl" for="log-km">Kilometres</label><input type="number" id="log-km" inputmode="decimal" min="0.1" max="150" step="0.1" placeholder="5.0"></div>
+    </div>
+    <div class="quick" aria-label="Quick distances">
+      <button type="button" data-km="2">2 km</button>
+      <button type="button" data-km="3">3 km</button>
+      <button type="button" data-km="5">5 km</button>
+      <button type="button" data-km="8">8 km</button>
+      <button type="button" data-km="10">10 km</button>
+    </div>
+    <div class="field">
+      <label class="lbl" for="log-idea">An idea from this walk <span class="opt">(optional)</span></label>
+      <textarea id="log-idea" rows="2" maxlength="500" placeholder="Anything you thought about on the way"></textarea>
+      <label class="check"><input type="checkbox" id="log-idea-share"> Share this idea with the other walkers</label>
+    </div>
+    <p class="hint" id="log-hint">One entry per person per day. Logging the same day again replaces it.</p>
+    <button type="button" class="primary" id="log-save">Save walk</button>
+  </section>
+
+  <div class="tabs" role="tablist" aria-label="More about the walk" id="tabs">
+    <button type="button" class="tab" role="tab" id="tab-walkers" aria-controls="panel-walkers">Walkers</button>
+    <button type="button" class="tab" role="tab" id="tab-postcards" aria-controls="panel-postcards">Postcards <span class="ct" id="ct-postcards"></span></button>
+    <button type="button" class="tab" role="tab" id="tab-passport" aria-controls="panel-passport">Passport <span class="ct" id="ct-passport"></span></button>
+    <button type="button" class="tab" role="tab" id="tab-ideas" aria-controls="panel-ideas">Ideas <span class="ct" id="ct-ideas"></span></button>
+    <button type="button" class="tab" role="tab" id="tab-route" aria-controls="panel-route">Route</button>
+  </div>
+
+  <section class="panel" id="panel-walkers" role="tabpanel" aria-labelledby="tab-walkers">
+    <div class="head"><h2>Walkers</h2><button type="button" class="link" id="edit-walkers">Edit</button></div>
+    <p class="together" id="together"></p>
+    <ol class="wlist" id="walker-list"></ol>
+    <form class="add" id="add-walker" autocomplete="off">
+      <label class="lbl" for="new-name">Add a walker</label>
+      <div class="add-row"><input type="text" id="new-name" maxlength="24" placeholder="A friend's name"><button class="btn" type="submit" id="add-btn">Add</button></div>
+      <div class="avpick" id="new-avatar" role="group" aria-label="Pick a character"></div>
+      <p class="hint">Friends who have edit access to this page can log their own walks. You can also log for them.</p>
+    </form>
+    <h3 class="sub-h">Recent walks <span class="hint">· tap one to edit it</span></h3>
+    <ul class="rlist" id="walk-list"></ul>
+    <div class="datazone" id="datazone" hidden>
+      <h3 class="sub-h">Your data</h3>
+      <p class="hint">A backup file holds every walker and walk, the shared ideas, and your own private ideas.</p>
+      <div class="row-btns">
+        <button type="button" class="btn" id="backup-btn">Download a backup</button>
+        <button type="button" class="btn" id="import-btn" hidden>Import a backup</button>
+        <input type="file" id="import-file" accept=".json,application/json" hidden>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-postcards" role="tabpanel" aria-labelledby="tab-postcards" hidden>
+    <div class="head"><h2>Postcards</h2></div>
+    <p class="hint" id="pc-sub"></p>
+    <ul class="pc-grid" id="cards"></ul>
+  </section>
+
+  <section class="panel" id="panel-passport" role="tabpanel" aria-labelledby="tab-passport" hidden>
+    <div class="head"><h2>Passport</h2></div>
+    <p class="hint" id="pp-sub"></p>
+    <div class="pp" id="stamps"></div>
+  </section>
+
+  <section class="panel" id="panel-ideas" role="tabpanel" aria-labelledby="tab-ideas" hidden>
+    <div class="head"><h2>Ideas</h2></div>
+    <div class="idea-new">
+      <label class="lbl" for="idea-text">Write down an idea</label>
+      <textarea id="idea-text" rows="3" maxlength="500" placeholder="Whatever popped into your head today"></textarea>
+      <div class="idea-row">
+        <label class="check"><input type="checkbox" id="idea-share"> Share with the other walkers</label>
+        <button type="button" class="btn" id="idea-save">Save idea</button>
+      </div>
+      <p class="hint" id="idea-hint">Ideas stay private to you unless you tick share, even if other people can open this page.</p>
+    </div>
+    <ul class="ideas" id="idea-list"></ul>
+  </section>
+
+  <section class="panel" id="panel-route" role="tabpanel" aria-labelledby="tab-route" hidden>
+    <div class="head"><h2>The route, stretch by stretch</h2></div>
+    <p class="route-sub" id="route-sub"></p>
+    <ol class="rtlist" id="route-list"></ol>
+  </section>
+
+  <section class="block numbers" aria-labelledby="num-h">
+    <h2 id="num-h">The numbers</h2>
+    <dl>
+      <div><dt>All the way round the equator</dt><dd>40,075 km</dd></div>
+      <div><dt>Over land</dt><dd>≈ 8,714 km · 21.7%</dd></div>
+      <div><dt>Over sea</dt><dd>≈ 31,361 km · 78.3%</dd></div>
+      <div><dt>At 5 km a day, whole equator</dt><dd>8,015 days ≈ 21.9 years</dd></div>
+      <div><dt>At 5 km a day, land only</dt><dd>1,743 days ≈ 4.8 years</dd></div>
+    </dl>
+    <p class="fine">The equator runs about 67 km longer than a pole-to-pole circle because the Earth bulges at its middle. Country borders, landscapes and landmark positions are approximate, and this route counts Lake Victoria as water. The walk starts on the Gabon coast and heads east.</p>
+  </section>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(() => {
+  // ================= geography =================
+  const EQ = 40075, LAND_KM = 8714, SEA_KM = EQ - LAND_KM, START = 9.30;
+  const RAW = [
+    ["Gabon", 9.30, 13.95, "land"],
+    ["Republic of the Congo", 13.95, 17.75, "land"],
+    ["DR Congo", 17.75, 29.70, "land"],
+    ["Uganda", 29.70, 32.25, "land"],
+    ["Lake Victoria", 32.25, 34.05, "sea"],
+    ["Kenya", 34.05, 41.00, "land"],
+    ["Somalia", 41.00, 42.70, "land"],
+    ["Indian Ocean", 42.70, 99.30, "sea", "passes through the Maldives"],
+    ["Sumatra, Indonesia", 99.30, 103.75, "land"],
+    ["Riau Islands and Karimata Strait", 103.75, 109.05, "sea"],
+    ["Borneo, Indonesia", 109.05, 117.50, "land"],
+    ["Makassar Strait", 117.50, 119.75, "sea"],
+    ["Sulawesi, Indonesia", 119.75, 120.20, "land"],
+    ["Gulf of Tomini and Molucca Sea", 120.20, 127.65, "sea"],
+    ["Halmahera, Indonesia", 127.65, 128.15, "land"],
+    ["Pacific Ocean", 128.15, 268.45, "sea", "passes Kiribati and Baker Island"],
+    ["Galápagos (Isabela), Ecuador", 268.45, 268.75, "land"],
+    ["Pacific Ocean", 268.75, 279.95, "sea"],
+    ["Ecuador", 279.95, 284.65, "land"],
+    ["Colombia", 284.65, 290.05, "land"],
+    ["Brazil", 290.05, 309.95, "land"],
+    ["Atlantic Ocean", 309.95, 369.30, "sea", "passes São Tomé and Príncipe"]
+  ];
+  const FACTS = [
+    "Most of Gabon is rainforest. Forest elephants and western lowland gorillas live under the canopy.",
+    "The small town of Makoua sits almost exactly on the equator.",
+    "The Congo River crosses the equator twice. You meet it at Mbandaka, a city right on the line.",
+    "Equator signs here often come with a water-swirl show. It's a trick: Earth's spin is far too weak to steer water in a basin.",
+    "Africa's largest lake, shared by Uganda, Kenya and Tanzania. The White Nile flows out of it.",
+    "Mount Kenya stands just south of the equator and still holds small glaciers.",
+    "The equator meets the Indian Ocean just north of the port of Kismayo.",
+    "Halfway across, you slip through the Maldives along the Equatorial Channel, between two atolls.",
+    "Sumatra is home to orangutans and tigers. The town of Bonjol has an equator monument right by the road.",
+    "A shallow sea dotted with small islands, between Sumatra and Borneo.",
+    "Pontianak's Equator Monument draws crowds at the equinoxes, when the noon sun is overhead and shadows nearly vanish.",
+    "This strait is part of the Wallace Line, an invisible border between Asian and Australian wildlife.",
+    "Sulawesi is shaped like a sprawling letter K, with long mountainous arms.",
+    "Calm water and coral reefs. The Togean Islands sit in this gulf.",
+    "These are the Moluccas, the original Spice Islands. For centuries, cloves grew only around here.",
+    "The longest stretch of the walk: over 15,000 km of water. You pass Kiribati, the only country in all four hemispheres.",
+    "Isabela is the largest Galápagos island. The equator runs across its northern volcanoes.",
+    "Cold currents here feed the Galápagos penguins, the only penguins that live at the equator.",
+    "Ecuador is named after the equator. Its volcano Cayambe holds the only snow anywhere on the line.",
+    "Colombia's slice of the equator is deep Amazon rainforest, where rivers are the main roads.",
+    "The longest land stretch, about 2,300 km. In Macapá, the halfway line of the Zerão stadium sits on the equator.",
+    "Almost home. The tiny islet of Ilhéu das Rolas, in São Tomé and Príncipe, has an equator marker."
+  ];
+  const landDeg = RAW.filter(r => r[3] === "land").reduce((s, r) => s + (r[2] - r[1]), 0);
+  const seaDeg = 360 - landDeg;
+  const SEGS = []; let acc = 0, lacc = 0;
+  RAW.forEach(([name, a, b, type, note], i) => {
+    const km = (b - a) * (type === "land" ? LAND_KM / landDeg : SEA_KM / seaDeg);
+    SEGS.push({ i, name, a, b, type, note: note || "", km, start: acc, lstart: type === "land" ? lacc : null });
+    acc += km; if (type === "land") lacc += km;
+  });
+  const LAND = SEGS.filter(s => s.type === "land");
+  const route = m => m === "land" ? LAND : SEGS;
+  const goalOf = m => m === "land" ? LAND_KM : EQ;
+  const startOf = (s, m) => m === "land" ? s.lstart : s.start;
+  function locate(km, m) {
+    const list = route(m), goal = goalOf(m);
+    const done = km >= goal - 1e-9;
+    const k = Math.min(Math.max(km, 0), goal);
+    let idx = list.length - 1;
+    for (let j = 0; j < list.length; j++) { if (k < startOf(list[j], m) + list[j].km) { idx = j; break; } }
+    const s = list[idx];
+    const into = Math.min(Math.max(k - startOf(s, m), 0), s.km);
+    const f = s.km ? into / s.km : 0;
+    return { s, idx, into, left: s.km - into, lon: s.a + f * (s.b - s.a), done, next: list[idx + 1] || null };
+  }
+  function kmAtLon(lon) { const s = SEGS.find(s => lon >= s.a && lon < s.b) || SEGS[0]; return s.start + (lon - s.a) / (s.b - s.a) * s.km; }
+  const phrase = s => (s.type === "sea" && !/^Lake/.test(s.name)) ? "the " + s.name : s.name;
+
+  const STAMPS = [
+    { name: "Gabon", seg: 0 }, { name: "Republic of the Congo", seg: 1 }, { name: "DR Congo", seg: 2 },
+    { name: "Uganda", seg: 3 }, { name: "Kenya", seg: 5 }, { name: "Somalia", seg: 6 },
+    { name: "Maldives", lon: 73.2, sub: "waters" }, { name: "Indonesia", seg: 8 },
+    { name: "Kiribati", lon: 173.6, sub: "waters" }, { name: "Ecuador", seg: 16 },
+    { name: "Colombia", seg: 19 }, { name: "Brazil", seg: 20 },
+    { name: "São Tomé and Príncipe", lon: 366.52, sub: "Ilhéu das Rolas" }
+  ];
+
+  // ================= landscapes =================
+  // [from lon, to lon, biome, place label]
+  const ZONES = [
+    [9.30, 9.55, "beach", "Gabon coast"], [9.55, 13.95, "rainforest", "Gabon rainforest"],
+    [13.95, 17.75, "rainforest", "Congo basin"], [17.75, 18.6, "river", "Congo River, Mbandaka"],
+    [18.6, 29.4, "rainforest", "Congo basin"], [29.4, 30.3, "snowpeaks", "Rwenzori Mountains"],
+    [30.3, 32.25, "savanna", "Ugandan savanna"], [32.25, 34.05, "lake", "Lake Victoria"],
+    [34.05, 35.6, "fields", "Western Kenya farmland"], [35.6, 36.6, "rift", "Great Rift Valley"],
+    [36.6, 38.0, "mtkenya", "Below Mount Kenya"], [38.0, 42.45, "dry", "Dry bushland"],
+    [42.45, 42.70, "beach", "Somali coast"], [42.70, 72.6, "ocean", "Indian Ocean"],
+    [72.6, 73.8, "islands", "Maldives"], [73.8, 99.30, "ocean", "Indian Ocean"],
+    [99.30, 99.55, "beach", "Sumatra's west coast"], [99.55, 101.0, "peaks", "Barisan Mountains"],
+    [101.0, 103.75, "rainforest", "Sumatran forest"], [103.75, 109.05, "islands", "Riau Islands"],
+    [109.05, 109.6, "river", "Pontianak, Kapuas River"], [109.6, 117.3, "rainforest", "Borneo rainforest"],
+    [117.3, 117.5, "beach", "East Borneo coast"], [117.5, 119.75, "ocean", "Makassar Strait"],
+    [119.75, 120.20, "peaks", "Sulawesi's mountains"], [120.20, 127.65, "ocean", "Molucca Sea"],
+    [127.65, 128.15, "peaks", "Halmahera"], [128.15, 173.0, "ocean", "Pacific Ocean"],
+    [173.0, 174.2, "islands", "Kiribati"], [174.2, 268.45, "ocean", "Pacific Ocean"],
+    [268.45, 268.75, "lava", "Isabela, Galápagos"], [268.75, 279.95, "ocean", "Pacific Ocean"],
+    [279.95, 280.25, "beach", "Ecuador's Pacific coast"], [280.25, 281.2, "fields", "Ecuador's coastal hills"],
+    [281.2, 282.6, "andes", "The Andes, near Cayambe"], [282.6, 292.6, "rainforest", "Amazon rainforest"],
+    [292.6, 293.2, "river", "Rio Negro"], [293.2, 308.4, "rainforest", "Amazon rainforest"],
+    [308.4, 309.95, "mangrove", "Amazon river mouth"], [309.95, 366.2, "ocean", "Atlantic Ocean"],
+    [366.2, 366.8, "islands", "São Tomé and Príncipe"], [366.8, 369.31, "ocean", "Gulf of Guinea"]
+  ];
+  const BIOME = {
+    rainforest: { far: "hills", mid: "canopy", ground: "grass", fg: "ferns", birds: true },
+    beach: { far: "sea", mid: "palms", ground: "sand", fg: "shells" },
+    river: { far: "hills", mid: "canopy", ground: "grass", fg: "ferns", river: true },
+    snowpeaks: { far: "snowpeaks", mid: "pines", ground: "grass", fg: "rocks" },
+    savanna: { far: "flat", mid: "acacia", ground: "savanna", fg: "tufts", animal: "giraffe" },
+    lake: { far: "shore", mid: "", water: true },
+    fields: { far: "hills", mid: "fields", ground: "grass", fg: "tufts" },
+    rift: { far: "cliffs", mid: "acacia", ground: "savanna", fg: "rocks" },
+    mtkenya: { far: "bigpeak", mid: "fields", ground: "grass", fg: "tufts" },
+    dry: { far: "flat", mid: "bushes", ground: "soil", fg: "rocks", animal: "camel" },
+    ocean: { far: "sea", mid: "", water: true, animal: "whale" },
+    islands: { far: "sea", mid: "isles", water: true },
+    peaks: { far: "peaks", mid: "canopy", ground: "grass", fg: "ferns" },
+    lava: { far: "volcano", mid: "cacti", ground: "lava", fg: "rocks", animal: "tortoise" },
+    andes: { far: "bigpeak", mid: "pines", ground: "grass", fg: "rocks", mark: true },
+    mangrove: { far: "sea", mid: "mangroves", water: true }
+  };
+  const QUIPS = {
+    rainforest: ["So. Many. Trees.", "Did that branch just move?", "It's very humid in here.", "Somewhere a gorilla is watching."],
+    beach: ["Sand in my shoes already.", "That's a lot of ocean ahead.", "Nice view!"],
+    river: ["Big river. Bigger boat?", "Walking along the water.", "Is that a canoe?"],
+    snowpeaks: ["Snow, right on the equator!", "The Mountains of the Moon."],
+    savanna: ["Was that a giraffe?", "So much sky out here.", "Lions? Let's not."],
+    lake: ["This lake is enormous.", "Rowing, rowing, rowing…"],
+    fields: ["Tea fields? Tea fields!", "Smells like rain."],
+    rift: ["The ground just… drops.", "Hello, Rift Valley."],
+    mtkenya: ["That's Mount Kenya!", "Glaciers on the equator."],
+    dry: ["Water break, please.", "Hot, hot, hot.", "A camel! Hello."],
+    ocean: ["Is it too late to learn to swim?", "Still water. Lots of it.", "Land ho? Not yet.", "Was that a whale?"],
+    islands: ["An island! A small one.", "Palm trees ahoy."],
+    peaks: ["Uphill again.", "Volcano or mountain?"],
+    lava: ["Hello, tortoise.", "Black rock everywhere."],
+    andes: ["The middle of the world!", "Cayambe has snow!"],
+    mangrove: ["Roots everywhere.", "The Atlantic is close."]
+  };
+  const START_QUIPS = ["Ready when you are.", "Let's go!", "First step's the hardest."];
+  const DONE_QUIPS = ["All the way round!", "We did it!"];
+
+  function rng(seed) { let s = (seed >>> 0) || 1; return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; }; }
+  const zoneIndexAt = lon => { for (let i = 0; i < ZONES.length; i++) if (lon >= ZONES[i][0] && lon < ZONES[i][1]) return i; return 0; };
+  const n1 = v => Math.round(v * 10) / 10;
+  const tile3Full = c => `<g transform="translate(-400 0)">${c}</g>${c}<g transform="translate(400 0)">${c}</g>`;
+
+  function hills(r, base, amp, min, n, cls, bottom) {
+    const ys = []; for (let i = 0; i < n; i++) ys.push(base - (min + r() * amp)); ys.push(ys[0]);
+    const st = 400 / n, bt = bottom || 200; let d = `M0 ${bt}L0 ${n1(ys[0])}`;
+    for (let i = 0; i < n; i++) { const x0 = i * st, x1 = (i + 1) * st; d += `C${n1(x0 + st / 2)} ${n1(ys[i])} ${n1(x1 - st / 2)} ${n1(ys[i + 1])} ${n1(x1)} ${n1(ys[i + 1])}`; }
+    return `<path class="${cls}" d="${d}L400 ${bt}Z"/>`;
+  }
+  function peaks(r, base, amp, min, n, cls, snow) {
+    const st = 400 / n, v = []; for (let i = 0; i < n; i++) v.push(base - r() * 8); v.push(v[0]);
+    let d = `M0 200L0 ${n1(v[0])}`, caps = "";
+    for (let i = 0; i < n; i++) {
+      const x0 = i * st, x1 = (i + 1) * st, px = x0 + st * (0.35 + r() * 0.3), py = base - (min + r() * amp);
+      d += `L${n1(px)} ${n1(py)}L${n1(x1)} ${n1(v[i + 1])}`;
+      if (snow) {
+        const k = 0.3, lx = px + (x0 - px) * k, ly = py + (v[i] - py) * k, rx = px + (x1 - px) * k, ry = py + (v[i + 1] - py) * k;
+        caps += `<path class="snow" d="M${n1(px)} ${n1(py)}L${n1(lx)} ${n1(ly)}L${n1((2 * lx + rx) / 3)} ${n1((2 * ly + ry) / 3 - 3)}L${n1((lx + 2 * rx) / 3)} ${n1((ly + 2 * ry) / 3 + 2)}L${n1(rx)} ${n1(ry)}Z"/>`;
+      }
+    }
+    return `<path class="${cls}" d="${d}L400 200Z"/>${caps}`;
+  }
+  function canopy(x, b, r, s) {
+    const h = (30 + r() * 26) * (s || 1), w = h * 0.55;
+    return `<rect class="t-trunk" x="${n1(x - 2)}" y="${n1(b - h * 0.5)}" width="4" height="${n1(h * 0.5 + 2)}"/><circle class="t-leaf2" cx="${n1(x - w * 0.35)}" cy="${n1(b - h * 0.58)}" r="${n1(w * 0.36)}"/><circle class="t-leaf" cx="${n1(x + w * 0.32)}" cy="${n1(b - h * 0.62)}" r="${n1(w * 0.4)}"/><circle class="t-leaf" cx="${n1(x)}" cy="${n1(b - h * 0.82)}" r="${n1(w * 0.44)}"/>`;
+  }
+  function acacia(x, b, r) {
+    const h = 30 + r() * 16, w = 16 + r() * 10;
+    return `<path class="t-trunk-s" stroke-width="2.4" d="M${n1(x)} ${b}Q${n1(x + 1)} ${n1(b - h * 0.5)} ${n1(x + 4)} ${n1(b - h + 2)}M${n1(x + 1)} ${n1(b - h * 0.55)}L${n1(x - 7)} ${n1(b - h + 3)}"/><ellipse class="t-leaf" cx="${n1(x + 1)}" cy="${n1(b - h)}" rx="${n1(w)}" ry="4.5"/>`;
+  }
+  function pine(x, b, r) {
+    const h = 26 + r() * 24, w = h * 0.42;
+    let s = `<rect class="t-trunk" x="${n1(x - 1.5)}" y="${n1(b - 6)}" width="3" height="7"/>`;
+    for (let k = 0; k < 3; k++) {
+      const top = b - h + k * h * 0.22, bot = b - 4 - (2 - k) * h * 0.18, ww = w * (0.6 + k * 0.22);
+      s += `<path class="${k % 2 ? "t-leaf" : "t-leaf2"}" d="M${n1(x)} ${n1(top)}L${n1(x + ww)} ${n1(bot)}L${n1(x - ww)} ${n1(bot)}Z"/>`;
+    }
+    return s;
+  }
+  function palm(x, b, r) {
+    const h = 36 + r() * 16, lean = 5 + r() * 9, tx = x + lean, ty = b - h;
+    let s = `<path class="t-trunk-s" stroke-width="3" d="M${n1(x)} ${b}Q${n1(x - 2)} ${n1(b - h * 0.5)} ${n1(tx)} ${n1(ty)}"/>`;
+    for (const [dx, dy] of [[-18, 6], [-12, -6], [0, -9], [13, -5], [19, 7]]) s += `<path class="frond" d="M${n1(tx)} ${n1(ty)}Q${n1(tx + dx * 0.5)} ${n1(ty + dy - 6)} ${n1(tx + dx)} ${n1(ty + dy + 4)}"/>`;
+    return s + `<circle class="t-trunk" cx="${n1(tx - 1)}" cy="${n1(ty + 3)}" r="2"/><circle class="t-trunk" cx="${n1(tx + 2)}" cy="${n1(ty + 3.5)}" r="2"/>`;
+  }
+  function bush(x, b, r) { const w = 8 + r() * 8; return `<ellipse class="t-dry" cx="${n1(x)}" cy="${n1(b - w * 0.45)}" rx="${n1(w)}" ry="${n1(w * 0.55)}"/><ellipse class="t-dry" cx="${n1(x + w * 0.7)}" cy="${n1(b - w * 0.3)}" rx="${n1(w * 0.6)}" ry="${n1(w * 0.4)}"/>`; }
+  function cactus(x, b, r) {
+    const h = 20 + r() * 14;
+    return `<rect class="t-leaf2" x="${n1(x - 2.5)}" y="${n1(b - h)}" width="5" height="${n1(h)}" rx="2"/><ellipse class="t-leaf" cx="${n1(x - 6)}" cy="${n1(b - h * 0.75)}" rx="5" ry="7" transform="rotate(-20 ${n1(x - 6)} ${n1(b - h * 0.75)})"/><ellipse class="t-leaf" cx="${n1(x + 6)}" cy="${n1(b - h * 0.9)}" rx="5" ry="7.5" transform="rotate(18 ${n1(x + 6)} ${n1(b - h * 0.9)})"/><ellipse class="t-leaf2" cx="${n1(x)}" cy="${n1(b - h - 5)}" rx="4.5" ry="6.5"/>`;
+  }
+  function mangrove(x, b, r) {
+    const w = 14 + r() * 8, cy = b - 26 - r() * 8; let s = "";
+    for (let k = -2; k <= 2; k++) s += `<path class="t-trunk-s" stroke-width="1.6" d="M${n1(x + k * 2)} ${n1(cy + 4)}Q${n1(x + k * 6)} ${n1(cy + 12)} ${n1(x + k * 8)} ${b + 6}"/>`;
+    return s + `<ellipse class="t-leaf2" cx="${n1(x)}" cy="${n1(cy)}" rx="${n1(w)}" ry="9"/><ellipse class="t-leaf" cx="${n1(x + w * 0.3)}" cy="${n1(cy - 4)}" rx="${n1(w * 0.65)}" ry="7"/>`;
+  }
+  function isle(x, b, r) { const w = 16 + r() * 12; return `<ellipse class="g-sand" cx="${n1(x)}" cy="${b}" rx="${n1(w)}" ry="3.5"/><g transform="translate(${n1(x)} ${b}) scale(.45) translate(${n1(-x)} ${-b})">${palm(x - 4, b, r)}</g>`; }
+  function fieldsTile(r) {
+    let s = `<rect class="field-a" x="0" y="134" width="400" height="7"/><rect class="field-b" x="0" y="140.5" width="400" height="6"/><rect class="field-a" x="0" y="146" width="400" height="9"/><path class="row" d="M0 143.5H400M0 150H400"/>`;
+    for (let k = 0; k < 3; k++) s += canopy(40 + k * 140 + r() * 40, 136, r, 0.55);
+    return s;
+  }
+  function giraffe(x, b) {
+    return `<line class="leg-s" x1="${x - 6}" y1="${b - 20}" x2="${x - 7}" y2="${b}"/><line class="leg-s" x1="${x - 2}" y1="${b - 20}" x2="${x - 2}" y2="${b}"/><line class="leg-s" x1="${x + 6}" y1="${b - 20}" x2="${x + 6}" y2="${b}"/><line class="leg-s" x1="${x + 9}" y1="${b - 20}" x2="${x + 10}" y2="${b}"/><path class="hide" d="M${x + 6} ${b - 22}L${x + 13} ${b - 46}L${x + 17} ${b - 45}L${x + 12} ${b - 20}Z"/><ellipse class="hide" cx="${x + 1}" cy="${b - 22}" rx="11" ry="6"/><ellipse class="hide" cx="${x + 17}" cy="${b - 47}" rx="5" ry="3"/><circle class="spot" cx="${x - 3}" cy="${b - 23}" r="1.6"/><circle class="spot" cx="${x + 4}" cy="${b - 21}" r="1.6"/><circle class="spot" cx="${x + 12}" cy="${b - 33}" r="1.2"/>`;
+  }
+  function camel(x, b) {
+    return `<line class="leg-s" x1="${x - 8}" y1="${b - 14}" x2="${x - 9}" y2="${b}"/><line class="leg-s" x1="${x - 4}" y1="${b - 14}" x2="${x - 4}" y2="${b}"/><line class="leg-s" x1="${x + 5}" y1="${b - 14}" x2="${x + 5}" y2="${b}"/><line class="leg-s" x1="${x + 9}" y1="${b - 14}" x2="${x + 10}" y2="${b}"/><path class="hide" d="M${x - 13} ${b - 14}Q${x - 12} ${b - 22} ${x - 5} ${b - 22}Q${x - 1} ${b - 31} ${x + 4} ${b - 22}Q${x + 10} ${b - 21} ${x + 12} ${b - 15}Q${x + 16} ${b - 24} ${x + 16} ${b - 28}L${x + 21} ${b - 28}L${x + 20} ${b - 25}L${x + 18} ${b - 25}Q${x + 17} ${b - 13} ${x + 9} ${b - 12}L${x - 11} ${b - 12}Z"/>`;
+  }
+  function tortoise(x, b) {
+    return `<ellipse class="shell" cx="${x + 11}" cy="${b - 4}" rx="4" ry="3"/><line class="leg-s" x1="${x - 6}" y1="${b - 3}" x2="${x - 7}" y2="${b}"/><line class="leg-s" x1="${x + 6}" y1="${b - 3}" x2="${x + 7}" y2="${b}"/><path class="shell" d="M${x - 10} ${b - 2}Q${x - 9} ${b - 16} ${x} ${b - 16}Q${x + 9} ${b - 16} ${x + 10} ${b - 2}Z"/><path class="shell-l" d="M${x - 5} ${b - 3}L${x - 4} ${b - 12}M${x + 4} ${b - 3}L${x + 4} ${b - 12}M${x - 9} ${b - 8}H${x + 9}"/>`;
+  }
+  function whale(x, b) {
+    return `<path class="whale" d="M${x} ${b}Q${x + 1} ${b - 8} ${x - 1} ${b - 12}Q${x - 9} ${b - 14} ${x - 13} ${b - 20}Q${x - 4} ${b - 19} ${x + 1} ${b - 15}Q${x + 6} ${b - 19} ${x + 15} ${b - 20}Q${x + 11} ${b - 14} ${x + 3} ${b - 12}Q${x + 1} ${b - 8} ${x + 3} ${b}Z"/><path class="wave" d="M${x - 10} ${b + 1}q4 -3 8 0t8 0t8 0"/>`;
+  }
+  function monument(x, b) {
+    return `<rect class="mon" x="${x - 12}" y="${b - 6}" width="24" height="6"/><path class="mon" d="M${x - 7} ${b - 6}L${x - 4} ${b - 44}L${x + 4} ${b - 44}L${x + 7} ${b - 6}Z"/><circle class="mon" cx="${x}" cy="${b - 52}" r="8"/><path class="mon-l" d="M${x - 8} ${b - 52}H${x + 8}"/>`;
+  }
+  const STARS = (() => { const r = rng(42); let s = ""; for (let i = 0; i < 18; i++) s += `<circle cx="${n1(r() * 400)}" cy="${n1(6 + r() * 80)}" r="${n1(0.5 + r() * 0.9)}"/>`; return s; })();
+
+  function farParts(kind, r) {
+    switch (kind) {
+      case "hills": return { fixed: "", scroll: hills(r, 132, 26, 8, 6, "far") };
+      case "peaks": return { fixed: "", scroll: peaks(r, 134, 46, 26, 5, "far2") };
+      case "snowpeaks": return { fixed: "", scroll: peaks(r, 134, 60, 36, 4, "far2", true) };
+      case "flat": return { fixed: "", scroll: hills(r, 134, 8, 3, 5, "far") };
+      case "cliffs": return { fixed: "", scroll: `<path class="far2" d="M0 200L0 98L120 98L136 104L150 128L272 128L286 106L300 98L400 98L400 200Z"/>` };
+      case "sea": return { fixed: `<rect class="sk-sea" x="0" y="116" width="400" height="84"/><path class="horizon" d="M0 116.5H400"/>`, scroll: "" };
+      case "shore": return { fixed: `<rect class="sk-sea" x="0" y="118" width="400" height="82"/>`, scroll: hills(r, 119, 7, 1, 5, "far", 121) };
+      case "bigpeak": return {
+        fixed: `<path class="far2" d="M150 136L214 72L226 80L246 48L272 74L284 70L340 136Z"/><path class="snow" d="M246 48L232 70L240 66L246 74L254 66L262 72L272 74Z"/><path class="snow" d="M214 72L226 80L222 84L216 79L208 80Z"/>`,
+        scroll: hills(r, 136, 10, 3, 6, "far")
+      };
+      case "volcano": return {
+        fixed: `<path class="far2" d="M180 136L238 74L262 74L322 136Z"/><path class="far" d="M238 74Q250 80 262 74"/><g class="puff"><circle class="smoke" cx="252" cy="64" r="6"/><circle class="smoke" cx="260" cy="52" r="8"/><circle class="smoke" cx="270" cy="40" r="7"/></g>`,
+        scroll: ""
+      };
+    }
+    return { fixed: "", scroll: "" };
+  }
+  function midParts(kind, r, b) {
+    let s = ""; const place = (n, fn) => { const st = 400 / n; for (let i = 0; i < n; i++) s += fn(i * st + st * (0.2 + r() * 0.6), b, r); };
+    if (kind === "canopy") { const st = 400 / 6; for (let i = 0; i < 6; i++) s += canopy(i * st + st * (0.1 + r() * 0.3), b - 4, r, 0.7); place(6, canopy); }
+    else if (kind === "acacia") place(3, acacia);
+    else if (kind === "pines") place(6, pine);
+    else if (kind === "palms") place(3, palm);
+    else if (kind === "bushes") place(6, bush);
+    else if (kind === "cacti") place(4, cactus);
+    else if (kind === "mangroves") place(4, mangrove);
+    else if (kind === "fields") s += fieldsTile(r);
+    else if (kind === "isles") { s += isle(80 + r() * 40, 121, r) + isle(270 + r() * 50, 122, r); }
+    return s;
+  }
+  function fgParts(kind, r) {
+    let s = "";
+    if (kind === "tufts" || kind === "ferns") {
+      for (let i = 0; i < 16; i++) { const x = n1(r() * 400), y = n1(158 + r() * 30);
+        s += kind === "ferns" ? `<path class="tuft" d="M${x} ${y}q-2 -8 4 -12M${x} ${y}q4 -6 9 -6M${x} ${y}q-5 -4 -8 -3"/>` : `<path class="tuft" d="M${n1(x - 3)} ${y}l3 -6M${x} ${y}l0 -7M${n1(x + 3)} ${y}l-2 -6"/>`; }
+    } else if (kind === "rocks") {
+      for (let i = 0; i < 9; i++) s += `<ellipse class="rock" cx="${n1(r() * 400)}" cy="${n1(160 + r() * 26)}" rx="${n1(2 + r() * 4)}" ry="${n1(1.5 + r() * 2)}"/>`;
+    } else if (kind === "shells") {
+      for (let i = 0; i < 10; i++) s += `<circle class="shell-s" cx="${n1(r() * 400)}" cy="${n1(160 + r() * 26)}" r="${n1(1 + r() * 1.4)}"/>`;
+    }
+    return s;
+  }
+  function waves(r) { let s = ""; for (let i = 0; i < 18; i++) { const x = n1(r() * 400), y = n1(152 + r() * 34); s += `<path class="wave" d="M${x} ${y}q4 -3 8 0t8 0"/>`; } return s; }
+
+  const bgCache = new Map();
+  function sceneBackground(zi, mini) {
+    const key = zi + (mini ? "m" : "f");
+    if (bgCache.has(key)) return bgCache.get(key);
+    const z = ZONES[zi], B = BIOME[z[2]], r = rng(1234 + zi * 7919);
+    const A = c => mini ? "" : ` class="scroll ${c}"`;
+    const tile3 = mini ? (c => c) : tile3Full;
+    let s = mini ? `<rect class="sk-sky" width="400" height="190"/>` : `<defs><linearGradient id="skyg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky-2)"/></linearGradient></defs><rect style="fill:url(#skyg)" width="400" height="190"/><g class="sk-stars">${STARS}</g>`;
+    s += `<circle class="sk-sun" cx="352" cy="36" r="13"/>`;
+    const fp = farParts(B.far, r);
+    s += fp.fixed;
+    let farScroll = fp.scroll;
+    if (B.birds) farScroll += `<path class="bird-f" d="M60 46q4 -4 8 0q4 -4 8 0"/><path class="bird-f" d="M84 56q3 -3 6 0q3 -3 6 0"/><path class="bird-f" d="M250 38q4 -4 8 0q4 -4 8 0"/>`;
+    if (farScroll) s += `<g${A("s-far")}>${tile3(farScroll)}</g>`;
+    if (B.water) {
+      let mid = midParts(B.mid, r, 148);
+      if (mid) s += `<g${A("s-mid")}>${tile3(mid)}</g>`;
+      s += `<rect class="g-water" x="0" y="146" width="400" height="44"/>`;
+      let fg = waves(r); if (B.animal === "whale") fg += whale(300, 158);
+      s += `<g${A("s-fg")}>${tile3(fg)}</g>`;
+    } else {
+      let mid = midParts(B.mid, r, 154);
+      if (B.animal === "giraffe") mid += giraffe(250, 154);
+      if (B.animal === "camel") mid += camel(240, 154);
+      if (B.mark) mid += monument(320, 154);
+      s += `<g${A("s-mid")}>${tile3(mid + hills(r, 154, 3, 0, 8, "g-" + B.ground))}</g>`;
+      if (B.river) s += `<rect class="g-water" x="0" y="156" width="400" height="8"/><g${A("s-fg")}>${tile3(`<path class="wave" d="M40 160q4 -2 8 0t8 0M190 159q4 -2 8 0t8 0M320 161q4 -2 8 0t8 0"/>`)}</g>`;
+      let fg = fgParts(B.fg, r) + `<line class="eqline" x1="0" y1="176" x2="400" y2="176"/>`;
+      if (B.animal === "tortoise") fg += tortoise(330, 186);
+      s += `<g${A("s-fg")}>${tile3(fg)}</g>`;
+    }
+    bgCache.set(key, s);
+    return s;
+  }
+
+  // ================= characters =================
+  const AVATARS = [["woman", "Woman"], ["person", "Man"], ["cat", "Cat"], ["dog", "Dog"], ["bird", "Bird"]];
+  function avatarSVG(av, c) {
+    const C = `style="fill:${c}"`;
+    if (av === "cat") return `<g class="bob"><path class="w-tail" d="M-10 -11Q-17 -13 -15 -22"/><line class="w-leg leg-a" x1="-7" y1="-8" x2="-7" y2="0"/><line class="w-leg leg-b" x1="-3" y1="-8" x2="-3" y2="0"/><line class="w-leg leg-b" x1="5" y1="-8" x2="5" y2="0"/><line class="w-leg leg-a" x1="8.5" y1="-8" x2="8.5" y2="0"/><ellipse class="w-body" ${C} cx="0" cy="-11" rx="11" ry="5.5"/><path class="w-body" ${C} d="M7.6 -20L8.4 -26L11.6 -21.6ZM12.4 -22L15.6 -25.6L15.8 -20Z"/><circle class="w-body" ${C} cx="11.5" cy="-17" r="5.2"/><circle class="w-eye" cx="13.8" cy="-17.6" r=".9"/></g>`;
+    if (av === "dog") return `<g class="bob"><path class="w-tail wag" d="M-11 -13L-16 -21"/><line class="w-leg leg-a" x1="-8" y1="-9" x2="-8" y2="0"/><line class="w-leg leg-b" x1="-4" y1="-9" x2="-4" y2="0"/><line class="w-leg leg-b" x1="6" y1="-9" x2="6" y2="0"/><line class="w-leg leg-a" x1="9.5" y1="-9" x2="9.5" y2="0"/><ellipse class="w-body" ${C} cx="0" cy="-13" rx="12" ry="6.5"/><circle class="w-body" ${C} cx="12.5" cy="-20" r="6"/><ellipse class="w-body" ${C} cx="18" cy="-18.5" rx="3.6" ry="2.6"/><ellipse class="w-ear" cx="10" cy="-18.5" rx="2.4" ry="5" transform="rotate(12 10 -18.5)"/><circle class="w-eye" cx="14" cy="-21.6" r=".9"/><circle class="w-eye" cx="21.2" cy="-19" r="1.2"/></g>`;
+    if (av === "bird") return `<g class="hop"><line class="w-leg" x1="-1.5" y1="-5" x2="-2.5" y2="0"/><line class="w-leg" x1="2.5" y1="-5" x2="2" y2="0"/><path class="w-body" ${C} d="M-7 -13L-13.5 -16.5L-12 -9.5Z"/><circle class="w-body" ${C} cx="0" cy="-12.5" r="8"/><path class="w-beak" d="M7 -15L13 -13L7 -11Z"/><ellipse class="w-body wing" ${C} cx="-2" cy="-11.5" rx="5" ry="3.4"/><circle class="w-eye" cx="3.6" cy="-15" r="1"/></g>`;
+    if (av === "woman") return `<g class="bob"><path class="w-hair pony" d="M-4 -36Q-11.5 -34 -10.5 -24.5Q-7.5 -28 -4.5 -30.5Z"/><line class="w-leg leg-a" x1="0" y1="-12" x2="0" y2="0"/><line class="w-leg leg-b" x1="0" y1="-12" x2="0" y2="0"/><line class="w-leg leg-a" x1="0" y1="-25" x2="0" y2="-15"/><path class="w-body" ${C} d="M-3.5 -27H3.5Q5 -27 5.5 -24L8.5 -11H-8.5L-5.5 -24Q-5 -27 -3.5 -27Z"/><line class="w-leg leg-b" x1="0" y1="-25" x2="0" y2="-15"/><circle class="w-head" cx=".5" cy="-33" r="6"/><path class="w-hair" d="M-5.6 -33Q-5.8 -40 .5 -39.8Q6.2 -39.8 6.8 -35Q2.5 -37.6 -1 -35.6Q-3.2 -34 -3.2 -29.5Q-5.6 -30.4 -5.6 -33Z"/><circle class="w-eye" cx="3" cy="-33.8" r=".9"/></g>`;
+    return `<g class="bob"><line class="w-leg leg-a" x1="0" y1="-13" x2="0" y2="0"/><line class="w-leg leg-b" x1="0" y1="-13" x2="0" y2="0"/><line class="w-leg leg-a" x1="0" y1="-25" x2="0" y2="-15"/><rect class="w-body" ${C} x="-5" y="-27" width="10" height="15" rx="4"/><line class="w-leg leg-b" x1="0" y1="-25" x2="0" y2="-15"/><circle class="w-head" cx=".5" cy="-33" r="6"/><path class="w-hair" d="M-5.4 -34Q-5 -39.6 .5 -39.4Q5.6 -39.4 6.3 -35Q2 -37.4 -2 -36Q-3.6 -35 -3.6 -32.5Q-5 -32.5 -5.4 -34Z"/><circle class="w-eye" cx="3" cy="-33.8" r=".9"/></g>`;
+  }
+  const avatarMini = (av, c) => `<svg viewBox="-17 -41 40 45" aria-hidden="true">${avatarSVG(av, c)}</svg>`;
+  const headTop = av => av === "person" || av === "woman" ? 40 : av === "dog" ? 27 : av === "cat" ? 27 : 21;
+
+  // ================= helpers =================
+  const COLORS = ["#E0533D", "#3F7FE0", "#2FA36B", "#9B5CE0", "#E08A1F", "#1FA3B3", "#D34C8A", "#7C8794"];
+  const $ = id => document.getElementById(id);
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+  const pad = n => String(n).padStart(2, "0");
+  const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+  const toUTC = s => { const [y, m, d] = s.split("-").map(Number); return Date.UTC(y, m - 1, d); };
+  const fromUTC = t => { const d = new Date(t); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`; };
+  const addDays = (s, n) => fromUTC(toUTC(s) + n * 864e5);
+  const fmtDate = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" }); };
+  const fmtShort = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }); };
+  const fmtInt = n => Math.round(n).toLocaleString();
+  const fmtKm = v => v >= 10000 ? Math.round(v).toLocaleString() : v.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const fmtPct = p => { if (p <= 0) return "0%"; if (p >= 100) return "100%"; return (p < 0.1 ? p.toFixed(3) : p < 10 ? p.toFixed(2) : p.toFixed(1)) + "%"; };
+  const fmtLon = lon => { const L = ((lon + 180) % 360 + 360) % 360 - 180; return `0°00′ · ${Math.abs(L).toFixed(2)}° ${L >= 0 ? "E" : "W"}`; };
+  const trunc = (s, n) => s.length > n ? s.slice(0, n - 1) + "…" : s;
+  const colorOf = w => COLORS[((Number(w.color) || 0) % COLORS.length + COLORS.length) % COLORS.length];
+  const avOf = w => AVATARS.some(a => a[0] === w.avatar) ? w.avatar : "woman";
+  const reduced = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const rid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36);
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
+
+  // ================= ring =================
+  const CX = 200, CY = 200, R = 172, TAU = Math.PI * 2;
+  const ang = lon => (lon - START) / 360 * TAU;
+  const pt = (r, a) => [CX + r * Math.sin(a), CY - r * Math.cos(a)];
+  const f2 = n => n.toFixed(2);
+  function full(r) { return `M${CX} ${CY - r}A${r} ${r} 0 1 1 ${CX} ${CY + r}A${r} ${r} 0 1 1 ${CX} ${CY - r}`; }
+  function arc(r, a1, a2) {
+    if (a2 - a1 >= TAU - 1e-6) return full(r);
+    const [x1, y1] = pt(r, a1), [x2, y2] = pt(r, a2);
+    return `M${f2(x1)} ${f2(y1)}A${r} ${r} 0 ${a2 - a1 > Math.PI ? 1 : 0} 1 ${f2(x2)} ${f2(y2)}`;
+  }
+  function circlePath(r, cw) { const s = cw ? 1 : 0; return `M${CX} ${CY - r}A${r} ${r} 0 1 ${s} ${CX} ${CY + r}A${r} ${r} 0 1 ${s} ${CX} ${CY - r}`; }
+  function progressPath(km, m, r) {
+    if (km <= 0) return "";
+    const p = locate(km, m);
+    if (m === "whole") return p.done ? full(r) : arc(r, 0, ang(p.lon));
+    let d = "";
+    for (let j = 0; j < p.idx; j++) d += arc(r, ang(LAND[j].a), ang(LAND[j].b));
+    return d + arc(r, ang(p.s.a), ang(p.done ? p.s.b : p.lon));
+  }
+  const LABELS = [["Africa", 31], ["Indian Ocean", 71], ["Indonesia", 114], ["Pacific Ocean", 198], ["South America", 293], ["Atlantic", 338]];
+
+  // ================= state =================
+  const TABS = ["walkers", "postcards", "passport", "ideas", "route"];
+  let mode = store.get("eq-mode") === "land" ? "land" : "whole";
+  let viewId = store.get("eq-view"), logId = store.get("eq-log");
+  let tab = (location.hash || "").slice(1); if (!TABS.includes(tab)) tab = TABS.includes(store.get("eq-tab")) ? store.get("eq-tab") : "walkers";
+  let editing = false, pulseId = null, busy = false, newAvatar = "woman", quipIdx = 0, sceneKey = "", sceneLead = null;
+  let pending = null, armTimer = null, statusMsg = "", pendingImport = null;
+  const PLATFORM = { saveFile: null, canImport: false };
+  let db = null, myId = null, canWrite = null, readOnly = false, phase = "loading";
+  const walkers = new Map(), logs = new Map(), privIdeas = new Map(), sharedIdeas = new Map();
+  const canEditData = () => phase === "live" && !readOnly;
+
+  function ordered() { return [...walkers.values()].sort((a, b) => String(a.joined || "").localeCompare(String(b.joined || "")) || a.id.localeCompare(b.id)); }
+  function computeStats() {
+    const S = new Map();
+    for (const w of walkers.values()) S.set(w.id, { w, total: 0, days: new Map() });
+    for (const l of logs.values()) {
+      const st = S.get(l.walkerId); if (!st || !l.days || typeof l.month !== "string") continue;
+      for (const [dd, v] of Object.entries(l.days)) {
+        const km = Number(v); if (!(km > 0)) continue;
+        const date = l.month + "-" + dd;
+        st.days.set(date, (st.days.get(date) || 0) + km); st.total += km;
+      }
+    }
+    return S;
+  }
+  function teamStats(S) { const days = new Map(); let total = 0; S.forEach(st => { total += st.total; st.days.forEach((km, d) => days.set(d, (days.get(d) || 0) + km)); }); return { total, days }; }
+  function streak(days) { let d = todayStr(); if (!days.has(d)) d = addDays(d, -1); let n = 0; while (days.has(d)) { n++; d = addDays(d, -1); } return n; }
+  function pace(st) {
+    if (!st.days.size) return null;
+    const today = todayStr(), first = [...st.days.keys()].sort()[0];
+    const span = Math.round((toUTC(today) - toUTC(first)) / 864e5) + 1;
+    const win = Math.max(1, Math.min(30, span)), from = addDays(today, -(win - 1));
+    let sum = 0; st.days.forEach((km, d) => { if (d >= from && d <= today) sum += km; });
+    return { avg: sum / win, win };
+  }
+  function crossDate(st, threshold) { let cum = 0; for (const d of [...st.days.keys()].sort()) { cum += st.days.get(d); if (cum > threshold + 1e-9) return d; } return null; }
+  function resolveIds() {
+    const ord = ordered();
+    const mine = myId ? ord.find(w => w.createdBy === myId) : null;
+    if (!(logId && walkers.has(logId))) logId = mine ? mine.id : (ord[0] ? ord[0].id : null);
+    if (viewId === "team" && ord.length < 2) viewId = null;
+    if (!(viewId === "team" || (viewId && walkers.has(viewId)))) viewId = logId;
+  }
+  function viewModel(S, ord) {
+    if (viewId === "team") return { team: true, st: teamStats(S), list: ord.slice(0, 6), name: "The team" };
+    const w = viewId && walkers.get(viewId);
+    if (w) return { team: false, st: S.get(w.id), list: [w], name: w.name || "Walker", w };
+    return { team: false, st: null, list: [], name: "" };
+  }
+
+  // ================= render =================
+  function render() {
+    resolveIds();
+    const S = computeStats(), ord = ordered(), V = viewModel(S, ord);
+    renderMode(); renderView(ord); renderRing(S, ord, V); renderHere(V); renderScene(V); renderWho(ord); renderLogHint(S);
+    renderTabs(); renderWalkers(S, ord); renderRecent(S); renderPostcards(V); renderPassport(V); renderIdeas(); renderRoute(V); renderData(); renderStatus();
+  }
+  function renderData() {
+    const live = phase === "live";
+    $("datazone").hidden = !(live && (PLATFORM.saveFile || PLATFORM.canImport));
+    $("backup-btn").hidden = !PLATFORM.saveFile;
+    const ib = $("import-btn");
+    ib.hidden = !(PLATFORM.canImport && canEditData());
+    if (pendingImport) {
+      ib.className = "btn armed";
+      ib.textContent = `Tap to import ${pendingImport.walkers} walker${pendingImport.walkers === 1 ? "" : "s"} and ${pendingImport.walks} walk${pendingImport.walks === 1 ? "" : "s"}`;
+    } else { ib.className = "btn"; ib.textContent = "Import a backup"; }
+  }
+  function buildBackup() {
+    const strip = m => { const o = {}; m.forEach((v, k) => { const c = Object.assign({}, v); delete c.id; o[k] = c; }); return o; };
+    return JSON.stringify({ app: "walk-the-equator", version: 1, exportedAt: new Date().toISOString(), walkers: strip(walkers), logs: strip(logs), ideas: strip(sharedIdeas), privateIdeas: strip(privIdeas) }, null, 2);
+  }
+  const okId = id => typeof id === "string" && /^[A-Za-z0-9_\-.~:@+]{1,200}$/.test(id) && id !== "." && id !== "..";
+  async function importBackup(data) {
+    const put = async (base, map) => { for (const [id, d] of Object.entries(map || {})) if (okId(id) && d && typeof d === "object") await db.doc(base + id).set(d); };
+    await put("walkers/", data.walkers);
+    await put("logs/", data.logs);
+    await put("ideas/", data.ideas);
+    if (myId) await put(`data/users/${myId}/`, Object.fromEntries(Object.entries(data.privateIdeas || {}).filter(([id]) => id.startsWith("ideas-"))));
+  }
+  function renderMode() {
+    $("mode-whole").setAttribute("aria-pressed", String(mode === "whole"));
+    $("mode-land").setAttribute("aria-pressed", String(mode === "land"));
+  }
+  function chip(id, label, color, pressed, team) {
+    const b = el("button", "chip"); b.type = "button"; b.dataset.id = id; b.setAttribute("aria-pressed", String(pressed));
+    const d = el("span", "dot" + (team ? " team" : "")); if (color) d.style.setProperty("--c", color);
+    b.append(d, el("span", "nm", label)); return b;
+  }
+  function renderView(ord) {
+    const box = $("view"); box.textContent = "";
+    $("viewbar").hidden = ord.length < 2;
+    if (ord.length < 2) return;
+    box.appendChild(chip("team", "Team", null, viewId === "team", true));
+    for (const w of ord) box.appendChild(chip(w.id, w.name || "Walker", colorOf(w), w.id === viewId));
+  }
+  function renderRing(S, ord, V) {
+    const lanes = [];
+    if (ord.length > 1) lanes.push({ id: "team", color: "var(--ink)", total: teamStats(S).total });
+    for (const w of ord) lanes.push({ id: w.id, color: colorOf(w), total: S.get(w.id).total });
+    const shown = lanes.slice(0, 6);
+    let h = `<defs><filter id="graphite" filterUnits="userSpaceOnUse" x="-16" y="-16" width="432" height="432"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.8" xChannelSelector="R" yChannelSelector="G"/></filter><path id="lbl-cw" d="${circlePath(R + 18, true)}"/><path id="lbl-ccw" d="${circlePath(R + 30, false)}"/></defs>`;
+    h += `<circle class="r-disc" cx="${CX}" cy="${CY}" r="${R + 10}"/>`;
+    for (const s of SEGS) {
+      const d = arc(R, ang(s.a), ang(s.b));
+      h += s.type === "land" ? `<path class="r-land${s.b - s.a < 1.2 ? " tiny" : ""}" d="${d}"/>` : `<path class="r-sea${mode === "land" ? " dim" : ""}" d="${d}"/>`;
+    }
+    for (const [t, lon] of LABELS) {
+      const a = ang(lon), deg = a * 180 / Math.PI, top = Math.cos(a) > 0;
+      const off = top ? deg / 360 * 100 : (360 - deg) / 360 * 100;
+      h += `<text class="r-hand"><textPath href="#${top ? "lbl-cw" : "lbl-ccw"}" startOffset="${off.toFixed(2)}%" text-anchor="middle">${t}</textPath></text>`;
+    }
+    h += `<line class="r-tick" x1="${CX}" y1="${CY - R - 10}" x2="${CX}" y2="${CY - R + 10}"/><text class="r-hand r-start" x="${CX}" y="4" text-anchor="middle">start</text>`;
+    shown.forEach((ln, i) => {
+      const r = R - 20 - i * 12, isF = ln.id === viewId;
+      h += `<circle class="r-track" cx="${CX}" cy="${CY}" r="${r}"/>`;
+      const d = progressPath(ln.total, mode, r);
+      if (d) h += `<path class="r-prog" filter="url(#graphite)" style="stroke:${ln.color}" d="${d}"/>`;
+      const p = locate(ln.total, mode);
+      const [x, y] = pt(r, ang(p.done && mode === "whole" ? START + 360 : p.lon));
+      if (isF) h += `<circle class="r-halo" cx="${f2(x)}" cy="${f2(y)}" r="10.5"/>`;
+      h += `<circle class="r-tip${ln.id === pulseId ? " pulse" : ""}" cx="${f2(x)}" cy="${f2(y)}" r="${isF ? 6.5 : 5}" style="fill:${ln.color}"/>`;
+    });
+    h += `<text id="c-name" class="c-name" x="${CX}" y="158" text-anchor="middle"></text><text id="c-km" class="c-km" x="${CX}" y="204" text-anchor="middle"></text><text id="c-sub" class="c-sub" x="${CX}" y="227" text-anchor="middle"></text><text id="c-pct" class="c-pct" x="${CX}" y="246" text-anchor="middle"></text>`;
+    $("ring").innerHTML = h;
+    const goal = goalOf(mode);
+    let name = "", km, sub, pctTxt = "";
+    if (V.st) {
+      name = V.team ? "the team’s line" : trunc(V.name, 14) + "’s line";
+      km = fmtKm(V.st.total);
+      sub = mode === "land" ? `km of ${fmtInt(LAND_KM)} on land` : `km of ${fmtInt(EQ)}`;
+      pctTxt = fmtPct(V.st.total / goal * 100) + " of the way round";
+    } else {
+      name = phase === "loading" ? "loading walkers" : "";
+      km = fmtInt(goal);
+      sub = mode === "land" ? "km of land on the equator" : "km around the equator";
+    }
+    $("c-name").textContent = name; $("c-km").textContent = km; $("c-km").classList.toggle("long", km.length > 7);
+    $("c-sub").textContent = sub; $("c-pct").textContent = pctTxt;
+    $("lanes-note").textContent = lanes.length > 6 ? "rings show the team and the first walkers" : ord.length > 1 ? "the dark inner ring is the whole team" : "one ring per walker, starting at the Gabon coast";
+    pulseId = null;
+  }
+  function renderHere(V) {
+    if (!V.st) {
+      $("here-who").textContent = "Where you are";
+      $("here-title").textContent = phase === "loading" ? "Loading the walk…" : "Nobody is walking yet";
+      $("here-barwrap").hidden = true; $("here-in").textContent = ""; $("here-next").textContent = "";
+      $("here-pace").textContent = phase === "loading" ? "" : phase === "nodb" ? "Walkers and walks appear here once you're signed in." : "Add yourself under Walkers below, then log your first walk.";
+      return;
+    }
+    const st = V.st, p = locate(st.total, mode), goal = goalOf(mode);
+    $("here-who").textContent = V.team ? "Where the team is" : "Where " + V.name + " is";
+    let title;
+    if (p.done) title = "All the way round. Take a bow.";
+    else if (st.total === 0) title = "At the start line on the Gabon coast";
+    else title = (p.s.type === "land" ? "Walking across " : "Sailing across ") + phrase(p.s);
+    $("here-title").textContent = title;
+    $("here-barwrap").hidden = false;
+    $("here-bar").style.width = (p.done ? 100 : p.into / p.s.km * 100) + "%";
+    $("here-bar").style.background = V.team ? "var(--ink)" : colorOf(V.w);
+    $("here-in").textContent = p.done ? "Finished" : `${fmtKm(p.into)} of ${fmtKm(p.s.km)} km through ${p.s.name}`;
+    $("here-next").textContent = p.done ? "" : p.next ? `Next: ${p.next.name}` : "Last stretch";
+    const pc = pace(st);
+    let txt;
+    if (p.done) txt = `${V.team ? "The team has" : V.name + " has"} walked the full ${fmtInt(goal)} km. Switch to the other route to keep going.`;
+    else if (!pc) txt = "Log a walk to see when the line would close.";
+    else if (pc.avg === 0) txt = "No walks in the last 30 days. The line is waiting.";
+    else {
+      const days = (goal - st.total) / pc.avg, yrs = days / 365.25, yr = new Date(Date.now() + days * 864e5).getFullYear();
+      const basis = pc.win < 30 ? (pc.win === 1 ? "so far" : `over the first ${pc.win} days`) : "over the last 30 days";
+      txt = `At ${pc.avg.toFixed(1)} km a day ${basis}, the rest takes about ${yrs < 1 ? Math.ceil(days) + " days" : yrs.toFixed(1) + " years"}. Finish line around ${yr}.`;
+    }
+    $("here-pace").textContent = txt;
+  }
+  function quipList(V) {
+    if (!V.st || V.st.total === 0) return START_QUIPS;
+    const p = locate(V.st.total, mode); if (p.done) return DONE_QUIPS;
+    return QUIPS[ZONES[zoneIndexAt(p.lon)][2]] || START_QUIPS;
+  }
+  function renderScene(V) {
+    const st = V.st, p = st ? locate(st.total, mode) : locate(0, mode);
+    const zi = st && p.done ? 0 : zoneIndexAt(p.lon);
+    const B = BIOME[ZONES[zi][2]];
+    const list = V.list;
+    const key = [zi, list.map(w => w.id + avOf(w) + colorOf(w) + (w.name || "")).join(","), V.team ? 1 : 0].join("|");
+    const svg = $("scene");
+    if (key !== sceneKey) {
+      sceneKey = key;
+      let s = sceneBackground(zi, false);
+      const sc = 1.25;
+      let chars = "", leadX = 0, leadHead = 0;
+      if (list.length) {
+        if (B.water) {
+          const n = list.length, w = Math.max(48, n * 28 + 26), bx = 170;
+          let inner = "";
+          list.forEach((wk, i) => { const x = -w / 2 + 18 + i * 28; inner += `<g transform="translate(${x} -2) scale(1.1)">${avatarSVG(avOf(wk), colorOf(wk))}</g>`; });
+          chars = `<g transform="translate(${bx} 168)"><g class="sway"><line class="b-mast" x1="${w / 2 - 12}" y1="-8" x2="${w / 2 - 12}" y2="-54"/><path class="b-sail" d="M${w / 2 - 10} -52L${w / 2 + 12} -14L${w / 2 - 10} -14Z"/>${inner}<path class="b-hull" d="M${-w / 2 - 6} -8L${w / 2 + 8} -8L${w / 2 - 2} 7L${-w / 2 + 4} 7Z"/></g></g>`;
+          leadX = bx - w / 2 + 18; leadHead = 168 - 2 - headTop(avOf(list[0])) * 1.1;
+        } else {
+          const gap = 34, lead = list.length > 1 ? 120 + (list.length - 1) * gap * 0.5 : 150;
+          list.forEach((wk, i) => {
+            const x = n1(lead - i * gap);
+            chars += `<g transform="translate(${x} 175) scale(${sc})"><g class="walking">${avatarSVG(avOf(wk), colorOf(wk))}</g></g>`;
+            if (V.team) chars += `<text class="sc-name" id="sc-n${i}" x="${x}" y="187" text-anchor="middle"></text>`;
+          });
+          leadX = lead; leadHead = 175 - headTop(avOf(list[0])) * sc;
+        }
+      }
+      s += `<g aria-hidden="true">${chars}</g><g id="sc-bubble"></g><text class="sc-label" id="sc-label" x="12" y="26"></text><text class="sc-coord" id="sc-coord" x="13" y="41"></text>`;
+      svg.innerHTML = s;
+      sceneLead = list.length ? { x: leadX, head: leadHead } : null;
+      if (V.team) list.forEach((wk, i) => { const t = $("sc-n" + i); if (t) t.textContent = trunc(wk.name || "", 9); });
+    }
+    $("sc-label").textContent = st && p.done ? "Back on the Gabon coast" : ZONES[zi][3];
+    $("sc-coord").textContent = fmtLon(st && p.done ? START : p.lon);
+    setBubble(V);
+    $("scene-wrap").setAttribute("aria-label", `${ZONES[zi][3]}. Tap to hear what the walker says.`);
+  }
+  function setBubble(V) {
+    const g = $("sc-bubble"); if (!g) return;
+    if (!sceneLead) { g.innerHTML = ""; return; }
+    const qs = quipList(V), text = qs[quipIdx % qs.length];
+    const w = Math.min(230, Math.round(text.length * 6.9) + 22), h = 26;
+    let bx = sceneLead.x - 20; if (bx + w > 392) bx = 392 - w; if (bx < 8) bx = 8;
+    const by = Math.max(46, sceneLead.head - h - 12), tx = Math.min(Math.max(sceneLead.x, bx + 12), bx + w - 12);
+    g.innerHTML = `<path class="bubble" d="M${bx + 8} ${by}H${bx + w - 8}Q${bx + w} ${by} ${bx + w} ${by + 8}V${by + h - 8}Q${bx + w} ${by + h} ${bx + w - 8} ${by + h}H${tx + 6}L${tx} ${by + h + 8}L${tx - 4} ${by + h}H${bx + 8}Q${bx} ${by + h} ${bx} ${by + h - 8}V${by + 8}Q${bx} ${by} ${bx + 8} ${by}Z"/><text class="bubble-t" x="${bx + w / 2}" y="${by + 18}" text-anchor="middle"></text>`;
+    g.querySelector("text").textContent = text;
+  }
+  function renderWho(ord) {
+    const box = $("who"); box.textContent = "";
+    if (!ord.length) { box.appendChild(el("p", "empty", phase === "loading" ? "Loading walkers…" : "Add a walker first, under Walkers below.")); return; }
+    for (const w of ord) box.appendChild(chip(w.id, w.name || "Walker", colorOf(w), w.id === logId));
+  }
+  function renderLogHint(S) {
+    const hint = $("log-hint"), save = $("log-save"), can = canEditData();
+    save.disabled = !can || !logId || busy;
+    ["log-km", "log-date", "log-idea", "log-idea-share"].forEach(id => $(id).disabled = !can);
+    forceShare($("log-idea-share"));
+    if (hint.classList.contains("err")) return;
+    hint.className = "hint";
+    const date = $("log-date").value, st = logId && S.get(logId), prev = st && date ? st.days.get(date) : 0;
+    if (prev) {
+      hint.className = "hint warn";
+      hint.textContent = `Already logged ${fmtKm(prev)} km for ${walkers.get(logId).name} on ${fmtDate(date)}. Saving replaces it.`;
+      save.textContent = busy ? "Saving…" : "Update walk";
+    } else {
+      hint.textContent = "One entry per person per day. Logging the same day again replaces it.";
+      save.textContent = busy ? "Saving…" : "Save walk";
+    }
+  }
+  function forceShare(box) {
+    // Private ideas need an identity; without one, sharing is the only option.
+    if (phase !== "loading" && !myId) { if (!box.dataset.forced) { box.dataset.forced = "1"; box.checked = true; } box.disabled = true; }
+    else if (box.dataset.forced) { delete box.dataset.forced; box.checked = false; }
+  }
+  function renderTabs() {
+    TABS.forEach(t => { const b = $("tab-" + t); b.setAttribute("aria-selected", String(t === tab)); b.tabIndex = t === tab ? 0 : -1; $("panel-" + t).hidden = t !== tab; });
+  }
+  function avatarPicker(selected, color, dataKey, wid) {
+    const box = el("div", "avpick"); box.setAttribute("role", "group"); box.setAttribute("aria-label", "Character");
+    for (const [key, label] of AVATARS) {
+      const b = el("button", "av"); b.type = "button"; b.dataset[dataKey] = key; if (wid) b.dataset.wid = wid;
+      b.setAttribute("aria-pressed", String(key === selected));
+      b.innerHTML = avatarMini(key, color); b.appendChild(el("span", "", label)); box.appendChild(b);
+    }
+    return box;
+  }
+  function renderWalkers(S, ord) {
+    const list = $("walker-list"), keep = {}, activeId = document.activeElement && document.activeElement.id;
+    list.querySelectorAll("input").forEach(i => keep[i.id] = i.value);
+    list.textContent = "";
+    $("edit-walkers").textContent = editing ? "Done" : "Edit";
+    $("edit-walkers").hidden = !ord.length || !canEditData();
+    $("add-walker").hidden = !canEditData();
+    const np = $("new-avatar"); np.replaceWith(Object.assign(avatarPicker(newAvatar, COLORS[nextColor()], "newav"), { id: "new-avatar" }));
+    const goal = goalOf(mode), T = teamStats(S), tog = $("together");
+    if (ord.length > 1 || (ord.length === 1 && T.total > 0)) {
+      const laps = Math.floor(T.total / goal), p = locate(Math.min(T.total, goal), mode);
+      tog.textContent = ""; tog.append("Together: "); tog.appendChild(el("b", "", fmtKm(T.total) + " km"));
+      tog.append(laps >= 1 ? `. That's ${(T.total / goal).toFixed(2)} times round.` : `. End to end, that reaches ${phrase(p.s)}, ${fmtPct(T.total / goal * 100)} of the way.`);
+      tog.hidden = false;
+    } else tog.hidden = true;
+    if (!ord.length) { list.appendChild(el("li", "empty", phase === "loading" ? "Loading walkers…" : phase === "nodb" ? "Walkers appear here when you open the page signed in." : "No walkers yet. Add yourself below to start the line.")); return; }
+    [...ord].sort((a, b) => S.get(b.id).total - S.get(a.id).total).forEach((w, i) => {
+      const st = S.get(w.id), c = colorOf(w), li = el("li", "walker");
+      const b = el("button", "w-main"); b.type = "button"; b.dataset.id = w.id; b.setAttribute("aria-pressed", String(w.id === viewId)); b.style.setProperty("--c", c);
+      const av = el("span", "w-av"); av.innerHTML = avatarMini(avOf(w), c);
+      const s = streak(st.days), last = [...st.days.keys()].sort().pop();
+      const bits = [fmtPct(st.total / goal * 100)]; if (s > 1) bits.push(`${s}-day streak`); bits.push(last ? `last walk ${fmtDate(last)}` : "no walks yet");
+      const mini = el("span", "w-mini"), fill = el("span"); fill.style.width = Math.min(100, st.total / goal * 100) + "%"; mini.appendChild(fill);
+      b.append(el("span", "w-rank", st.total > 0 ? String(i + 1) : "–"), av, el("span", "w-name", w.name || "Walker"), el("span", "w-km", fmtKm(st.total) + " km"), el("span", "w-meta", bits.join(" · ")), mini);
+      li.appendChild(b);
+      if (editing && canEditData()) {
+        const ed = el("div", "w-edit"), row = el("div", "row");
+        const inp = el("input"); inp.type = "text"; inp.maxLength = 24; inp.id = "rename-" + w.id;
+        inp.value = keep[inp.id] !== undefined ? keep[inp.id] : (w.name || ""); inp.setAttribute("aria-label", "Rename " + (w.name || "walker"));
+        const rn = el("button", "btn", "Rename"); rn.type = "button"; rn.dataset.rename = w.id;
+        const armed = pending === "rm:" + w.id;
+        const rm = el("button", "btn danger" + (armed ? " armed" : ""), armed ? "Tap again to remove with all walks" : "Remove"); rm.type = "button"; rm.dataset.remove = w.id;
+        row.append(inp, rn, rm);
+        ed.append(row, avatarPicker(avOf(w), c, "setav", w.id));
+        li.appendChild(ed);
+      }
+      list.appendChild(li);
+    });
+    if (activeId && activeId.startsWith("rename-") && $(activeId)) $(activeId).focus();
+  }
+  function nextColor() { const used = new Set([...walkers.values()].map(w => Number(w.color))); let c = 0; while (used.has(c) && c < COLORS.length) c++; return c >= COLORS.length ? walkers.size % COLORS.length : c; }
+  function delBtn(key, label) {
+    const armed = pending === key;
+    const b = el("button", "rw-del" + (armed ? " armed" : ""), armed ? "Confirm" : "Delete"); b.type = "button"; b.dataset.del = key; b.setAttribute("aria-label", label); return b;
+  }
+  function renderRecent(S) {
+    const list = $("walk-list"); list.textContent = "";
+    const rows = []; S.forEach((st, wid) => st.days.forEach((km, date) => rows.push({ wid, date, km, w: st.w })));
+    rows.sort((a, b) => b.date.localeCompare(a.date) || String(a.w.name).localeCompare(String(b.w.name)));
+    if (!rows.length) { list.appendChild(el("li", "empty", phase === "loading" ? "Loading walks…" : "No walks logged yet. The first one will show up here.")); return; }
+    rows.slice(0, 15).forEach(r => {
+      const li = el("li", "rw"), dot = el("span", "dot"); dot.style.setProperty("--c", colorOf(r.w));
+      const open = el("button", "rw-open"); open.type = "button"; open.dataset.wid = r.wid; open.dataset.date = r.date; open.dataset.km = r.km;
+      open.append(el("span", "rw-date", fmtDate(r.date)), el("span", "rw-name", r.w.name || "Walker"));
+      li.append(dot, open, el("span", "rw-km", fmtKm(r.km) + " km"));
+      li.appendChild(canEditData() ? delBtn("walk:" + r.wid + "|" + r.date, `Delete ${fmtKm(r.km)} km walk on ${fmtDate(r.date)}`) : el("span"));
+      list.appendChild(li);
+    });
+  }
+  const miniCache = new Map();
+  function miniScene(zi) { if (!miniCache.has(zi)) miniCache.set(zi, `<svg viewBox="0 58 400 132" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${sceneBackground(zi, true)}</svg>`); return miniCache.get(zi); }
+  function renderPostcards(V) {
+    const grid = $("cards"); grid.textContent = "";
+    const segs = route(mode), st = V.st; let got = 0;
+    segs.forEach(s => {
+      const th = startOf(s, mode), earned = !!(st && st.total > th + 1e-9); if (earned) got++;
+      const li = el("li", "pc " + (earned ? "earned" : "locked"));
+      const art = el("div", "pc-art"); art.innerHTML = miniScene(zoneIndexAt((s.a + s.b) / 2));
+      const body = el("div", "pc-body");
+      body.append(el("p", "pc-km", `from km ${fmtInt(th)} · ${fmtInt(s.km)} km long`), el("h3", "", s.name));
+      if (earned) { const d = crossDate(st, th); body.append(el("p", "pc-when", d ? "Arrived " + fmtShort(d) : "Arrived"), el("p", "pc-fact", FACTS[s.i])); }
+      else body.appendChild(el("p", "pc-lock", st ? `Walk ${fmtKm(th - st.total + 0.05)} km more to unlock.` : "Walk here to unlock."));
+      li.append(art, body); grid.appendChild(li);
+    });
+    $("pc-sub").textContent = `${V.team ? "The team has" : V.st ? V.name + " has" : "You have"} ${got} of ${segs.length} postcards. Each stretch of the ${mode === "land" ? "land route" : "equator"} sends one when you arrive.`;
+    $("ct-postcards").textContent = `${got}/${segs.length}`;
+  }
+  function stampSVG(name, sub, date, color, rot, earned) {
+    const words = name.toUpperCase().split(" "), lines = []; let cur = "";
+    for (const w of words) { if ((cur + " " + w).trim().length > 11 && cur) { lines.push(cur); cur = w; } else cur = (cur + " " + w).trim(); }
+    lines.push(cur);
+    const y0 = 52 - (lines.length - 1) * 6;
+    const fill = earned ? color : "currentColor";
+    let t = lines.map((l, i) => `<text class="st-name" x="50" y="${y0 + i * 12}" text-anchor="middle" style="fill:${fill}">${l}</text>`).join("");
+    t += `<text class="st-small" x="50" y="${earned ? 27 : 28}" text-anchor="middle" style="fill:${fill}">0°00′ EQUATOR</text>`;
+    t += `<text class="st-small" x="50" y="80" text-anchor="middle" style="fill:${fill}">${earned ? (date || "") : (sub ? sub.toUpperCase() : "NOT YET")}</text>`;
+    const ring = earned ? `<circle class="st-ring" cx="50" cy="50" r="44" style="stroke:${color}"/><circle class="st-ring2" cx="50" cy="50" r="38" style="stroke:${color}"/>` : `<circle class="st-ring" cx="50" cy="50" r="44"/>`;
+    return `<svg viewBox="0 0 100 100" role="img" aria-label="${name}${earned ? " stamp" : ", not yet"}"><g transform="rotate(${rot} 50 50)"${earned ? ' opacity=".92"' : ""}>${ring}${t}</g></svg>`;
+  }
+  function renderPassport(V) {
+    const box = $("stamps"); box.textContent = "";
+    const st = V.st; let got = 0, total = 0;
+    STAMPS.forEach((s, i) => {
+      if (s.lon && mode === "land") return;
+      total++;
+      const th = s.seg !== undefined ? startOf(SEGS[s.seg], mode) : kmAtLon(s.lon);
+      const earned = !!(st && st.total > th + 1e-9); if (earned) got++;
+      const d = earned ? crossDate(st, th) : null;
+      const dateTxt = d ? fmtShort(d).toUpperCase() : "";
+      const w = el("div", "stamp" + (earned ? "" : " st-lock")); w.style.color = "var(--ink-2)";
+      w.innerHTML = stampSVG(s.name, s.sub, dateTxt, COLORS[i % COLORS.length], ((i * 37) % 25) - 12, earned);
+      box.appendChild(w);
+    });
+    $("pp-sub").textContent = `${got} of ${total} stamps. You get one for each country the ${mode === "land" ? "land route" : "equator"} crosses${mode === "whole" ? ", plus Maldivian and Kiribati waters" : ""}.`;
+    $("ct-passport").textContent = `${got}/${total}`;
+  }
+  function allIdeas() {
+    const out = [];
+    privIdeas.forEach((d, id) => (Array.isArray(d.items) ? d.items : []).forEach(it => out.push(Object.assign({}, it, { priv: true, docId: id }))));
+    sharedIdeas.forEach((d, id) => (Array.isArray(d.items) ? d.items : []).forEach(it => out.push(Object.assign({}, it, { priv: false, docId: id, walkerId: d.walkerId }))));
+    out.sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")) || String(b.at || "").localeCompare(String(a.at || "")));
+    return out;
+  }
+  function renderIdeas() {
+    const list = $("idea-list"); list.textContent = "";
+    const can = canEditData(); ["idea-text", "idea-share", "idea-save"].forEach(id => $(id).disabled = !can);
+    forceShare($("idea-share"));
+    const items = allIdeas();
+    $("ct-ideas").textContent = items.length ? String(items.length) : "";
+    if (!items.length) { list.appendChild(el("li", "empty", phase === "loading" ? "Loading ideas…" : "No ideas yet. The next one you have on a walk can go here.")); return; }
+    items.forEach(it => {
+      const li = el("li", "idea"), top = el("div", "idea-top");
+      top.appendChild(el("span", "", it.date ? fmtDate(it.date) : ""));
+      if (it.priv) top.appendChild(el("span", "ptag", "Private"));
+      else { const w = walkers.get(it.walkerId); const d = el("span", "dot"); if (w) d.style.setProperty("--c", colorOf(w)); top.append(d, el("span", "", w ? w.name : "Shared")); }
+      if (can) top.appendChild(delBtn("idea:" + (it.priv ? "p" : "s") + "|" + it.docId + "|" + it.id, "Delete this idea"));
+      li.append(top, el("p", "idea-text", String(it.text || ""))); list.appendChild(li);
+    });
+  }
+  function renderRoute(V) {
+    const list = $("route-list"); list.textContent = "";
+    const p = V.st ? locate(V.st.total, mode) : null, segs = route(mode);
+    $("route-sub").textContent = mode === "land" ? `${segs.length} land stretches, eastward from the Gabon coast. Oceans and lakes are skipped.` : `${segs.length} stretches of land and sea, eastward from the Gabon coast.`;
+    segs.forEach((s, j) => {
+      let state = ""; if (p) { if (p.done || j < p.idx) state = "passed"; else if (j === p.idx && V.st.total > 0) state = "here"; }
+      const li = el("li", `rt ${s.type} ${state}`), nm = el("span", "rt-name", s.name);
+      if (state === "here") nm.appendChild(el("span", "tag here", "here"));
+      if (state === "passed") nm.appendChild(el("span", "tag done", "done"));
+      if (s.note) nm.appendChild(el("small", "", s.note));
+      li.append(el("span", "rt-mark"), nm, el("span", "rt-km", `${fmtInt(s.km)} km · from km ${fmtInt(startOf(s, mode))}`));
+      list.appendChild(li);
+    });
+  }
+  function renderStatus() {
+    let msg = "";
+    if (statusMsg) msg = statusMsg;
+    else if (phase === "nodb") msg = "Saved walks only load when this page is opened inside claude.ai while you're signed in, from the chat or your artifacts list. Opened on its own in a browser tab, it can't reach them.";
+    else if (phase === "error") msg = "Lost the connection to the walk data. Reload the page to reconnect.";
+    else if (readOnly) msg = "You can follow the walk, but logging needs edit access. Ask the owner of this page to give you edit access.";
+    $("status").textContent = msg; $("status").hidden = !msg;
+  }
+
+  // ================= toast + confirm =================
+  let toastTimer = null;
+  function toast(msg) { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 3800); }
+  function arm(key) { clearTimeout(armTimer); pending = key; armTimer = setTimeout(() => { pending = null; render(); }, 4000); render(); }
+  function disarm() { clearTimeout(armTimer); pending = null; }
+
+  // ================= writes =================
+  async function guarded(fn) {
+    if (!db || readOnly) return false;
+    try { await fn(); return true; }
+    catch (e) {
+      if (e && e.code === "unavailable") { await sleep(400 + Math.random() * 600); try { await fn(); return true; } catch (e2) { e = e2; } }
+      const c = e && e.code;
+      if (c === "local") toast(e.message);
+      else if (c === "permission_denied") { readOnly = true; render(); toast("Your account isn't allowed to save here."); }
+      else if (c === "invalid_argument" && canWrite !== true) { readOnly = true; render(); toast("Couldn't save. This page is view-only for you."); }
+      else if (c === "quota_exceeded") toast("The page's storage is full. Remove an old walker to make room.");
+      else if (c === "revoked") { readOnly = true; render(); }
+      else if (c === "resource_exhausted") toast("That was a lot at once. Wait a moment and try again.");
+      else toast("Couldn't save just now. Check your connection and try again.");
+      return false;
+    }
+  }
+  async function writeDay(wid, date, km) {
+    const month = date.slice(0, 7), dd = date.slice(8, 10), ref = db.doc(`logs/${wid}_${month}`);
+    const snap = await ref.get();
+    if (snap.exists) await ref.update({ days: { [dd]: km } });
+    else await ref.set({ walkerId: wid, month, days: { [dd]: km } });
+  }
+  async function deleteDay(wid, date) {
+    const month = date.slice(0, 7), dd = date.slice(8, 10), ref = db.doc(`logs/${wid}_${month}`);
+    const snap = await ref.get(); if (!snap.exists) return;
+    const data = snap.data(), days = Object.assign({}, data.days || {}); delete days[dd];
+    if (!Object.keys(days).length) await ref.delete(); else await ref.set({ walkerId: wid, month, days });
+  }
+  function ideaRef(priv, docId) { return priv ? db.doc(`data/users/${myId}/${docId}`) : db.doc(`ideas/${docId}`); }
+  async function addIdea(text, share, date) {
+    const month = date.slice(0, 7), item = { id: rid(), date, text, at: new Date().toISOString() };
+    const priv = !share;
+    if (priv && !myId) throw { code: "local", message: "Private ideas need you to be signed in. Tick share instead." };
+    if (!priv && !logId) throw { code: "local", message: "Add a walker first, so the shared idea has a name on it." };
+    const docId = priv ? `ideas-${month}` : `${logId}_${month}`, ref = ideaRef(priv, docId);
+    const snap = await ref.get();
+    const items = snap.exists && Array.isArray(snap.data().items) ? snap.data().items.concat([item]) : [item];
+    await ref.set(priv ? { month, items } : { walkerId: logId, month, items });
+  }
+  async function deleteIdea(priv, docId, id) {
+    const ref = ideaRef(priv, docId), snap = await ref.get(); if (!snap.exists) return;
+    const data = snap.data(), items = (Array.isArray(data.items) ? data.items : []).filter(x => x.id !== id);
+    if (!items.length) await ref.delete(); else await ref.set(Object.assign({}, data, { items }));
+  }
+
+  async function saveWalk() {
+    const hint = $("log-hint"); hint.classList.remove("err");
+    const wid = logId, date = $("log-date").value, km = parseFloat($("log-km").value);
+    if (!wid || !canEditData()) return;
+    if (!date || date > todayStr()) { hint.className = "hint err"; hint.textContent = "Pick a date up to today."; return; }
+    if (!(km >= 0.1 && km <= 150)) { hint.className = "hint err"; hint.textContent = "Enter a distance between 0.1 and 150 km."; $("log-km").focus(); return; }
+    const km1 = Math.round(km * 10) / 10, st = computeStats().get(wid), prev = st.days.get(date) || 0;
+    const before = locate(st.total, mode), after = locate(st.total - prev + km1, mode);
+    const ideaText = $("log-idea").value.trim().slice(0, 500), share = $("log-idea-share").checked;
+    busy = true; renderLogHint(computeStats());
+    const ok = await guarded(() => writeDay(wid, date, km1));
+    let ideaOk = true;
+    if (ok && ideaText) ideaOk = await guarded(() => addIdea(ideaText, share, date));
+    busy = false;
+    if (!ok) { render(); return; }
+    $("log-km").value = ""; if (ideaOk) $("log-idea").value = "";
+    pulseId = wid; if (viewId !== "team") { viewId = wid; store.set("eq-view", viewId); }
+    const name = walkers.get(wid) ? walkers.get(wid).name : "Walker";
+    let msg = `Saved ${fmtKm(km1)} km for ${name} on ${fmtDate(date)}.`;
+    if (after.done && !before.done) msg = `${name} made it all the way round!`;
+    else if (after.idx > before.idx) msg = `${name} reached ${phrase(after.s)}. New postcard!`;
+    if (ideaText) msg += ideaOk ? " Idea saved." : " The idea wasn't saved.";
+    toast(msg); quipIdx = 0; sceneKey = ""; render();
+  }
+
+  // ================= events =================
+  $("mode-whole").addEventListener("click", () => { mode = "whole"; store.set("eq-mode", mode); sceneKey = ""; render(); });
+  $("mode-land").addEventListener("click", () => { mode = "land"; store.set("eq-mode", mode); sceneKey = ""; render(); });
+  $("view").addEventListener("click", e => { const b = e.target.closest(".chip"); if (!b) return; viewId = b.dataset.id; store.set("eq-view", viewId); quipIdx = 0; render(); });
+  $("who").addEventListener("click", e => { const b = e.target.closest(".chip"); if (!b) return; logId = b.dataset.id; store.set("eq-log", logId); $("log-hint").classList.remove("err"); render(); });
+  $("log-date").addEventListener("input", () => { $("log-hint").classList.remove("err"); renderLogHint(computeStats()); });
+  $("log-km").addEventListener("input", () => { if ($("log-hint").classList.contains("err")) { $("log-hint").classList.remove("err"); renderLogHint(computeStats()); } });
+  $("log-km").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); saveWalk(); } });
+  document.querySelectorAll(".quick button").forEach(b => b.addEventListener("click", () => { if (!canEditData()) return; $("log-km").value = b.dataset.km; $("log-hint").classList.remove("err"); renderLogHint(computeStats()); }));
+  $("log-save").addEventListener("click", saveWalk);
+  const nextQuip = () => { quipIdx++; const S = computeStats(); setBubble(viewModel(S, ordered())); };
+  $("scene-wrap").addEventListener("click", nextQuip);
+  $("scene-wrap").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); nextQuip(); } });
+
+  $("tabs").addEventListener("click", e => { const b = e.target.closest(".tab"); if (!b) return; tab = b.id.slice(4); store.set("eq-tab", tab); renderTabs(); });
+  $("tabs").addEventListener("keydown", e => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    const i = TABS.indexOf(tab), n = (i + (e.key === "ArrowRight" ? 1 : -1) + TABS.length) % TABS.length;
+    tab = TABS[n]; store.set("eq-tab", tab); renderTabs(); $("tab-" + tab).focus();
+  });
+
+  $("edit-walkers").addEventListener("click", () => { editing = !editing; disarm(); render(); });
+  $("walker-list").addEventListener("click", async e => {
+    const main = e.target.closest(".w-main");
+    if (main) { viewId = main.dataset.id; store.set("eq-view", viewId); quipIdx = 0; render(); return; }
+    const avb = e.target.closest("[data-setav]");
+    if (avb) { const wid = avb.dataset.wid, av = avb.dataset.setav; if (await guarded(() => db.doc("walkers/" + wid).update({ avatar: av }))) toast("Character changed."); return; }
+    const rn = e.target.closest("[data-rename]");
+    if (rn) {
+      const wid = rn.dataset.rename, inp = $("rename-" + wid), name = (inp ? inp.value : "").trim().slice(0, 24);
+      if (!name) { toast("A name needs at least one letter."); return; }
+      if (await guarded(() => db.doc("walkers/" + wid).update({ name }))) { if (inp) inp.blur(); toast(`Renamed to ${name}.`); }
+      return;
+    }
+    const rm = e.target.closest("[data-remove]");
+    if (rm) {
+      const wid = rm.dataset.remove;
+      if (pending !== "rm:" + wid) { arm("rm:" + wid); return; }
+      disarm();
+      const name = walkers.get(wid) ? walkers.get(wid).name : "Walker";
+      const ok = await guarded(async () => {
+        for (const l of [...logs.values()].filter(l => l.walkerId === wid)) await db.doc("logs/" + l.id).delete();
+        for (const [id, d] of [...sharedIdeas.entries()].filter(([, d]) => d.walkerId === wid)) await db.doc("ideas/" + id).delete();
+        await db.doc("walkers/" + wid).delete();
+      });
+      if (ok) toast(`Removed ${name}.`);
+      render();
+    }
+  });
+  $("panel-walkers").addEventListener("click", e => {
+    const b = e.target.closest("[data-newav]"); if (!b) return;
+    newAvatar = b.dataset.newav; document.querySelectorAll("#new-avatar .av").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.newav === newAvatar)));
+  });
+  $("add-walker").addEventListener("submit", async e => {
+    e.preventDefault();
+    const inp = $("new-name"), name = inp.value.trim().slice(0, 24);
+    if (!name) { toast("Type a name first."); inp.focus(); return; }
+    if (!canEditData()) return;
+    const color = nextColor(); let newId = null;
+    $("add-btn").disabled = true;
+    const ok = await guarded(async () => { const ref = db.collection("walkers").doc(); await ref.set({ name, color, avatar: newAvatar, joined: new Date().toISOString(), createdBy: myId || null }); newId = ref.id; });
+    $("add-btn").disabled = false;
+    if (!ok) return;
+    inp.value = ""; newAvatar = "woman";
+    if (!logId || !walkers.has(logId)) { logId = newId; store.set("eq-log", logId); }
+    viewId = newId; store.set("eq-view", viewId);
+    toast(`${name} joined the walk.`); render();
+  });
+  $("walk-list").addEventListener("click", async e => {
+    const del = e.target.closest("[data-del]");
+    if (del) {
+      const key = del.dataset.del;
+      if (pending !== key) { arm(key); return; }
+      disarm();
+      const [wid, date] = key.slice(5).split("|");
+      if (await guarded(() => deleteDay(wid, date))) toast(`Deleted the walk on ${fmtDate(date)}.`);
+      render(); return;
+    }
+    const open = e.target.closest(".rw-open");
+    if (open && canEditData()) {
+      logId = open.dataset.wid; store.set("eq-log", logId);
+      $("log-date").value = open.dataset.date; $("log-km").value = open.dataset.km; $("log-hint").classList.remove("err");
+      render();
+      $("log").scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" });
+      $("log-km").focus({ preventScroll: true });
+    }
+  });
+  $("idea-save").addEventListener("click", async () => {
+    const text = $("idea-text").value.trim().slice(0, 500), share = $("idea-share").checked;
+    if (!text) { toast("Write the idea first."); $("idea-text").focus(); return; }
+    if (share && !logId) { toast("Add a walker first, so the shared idea has a name on it."); return; }
+    $("idea-save").disabled = true;
+    const ok = await guarded(() => addIdea(text, share, todayStr()));
+    $("idea-save").disabled = false;
+    if (ok) { $("idea-text").value = ""; toast(share ? "Idea saved and shared." : "Idea saved. Only you can see it."); render(); }
+  });
+  $("idea-list").addEventListener("click", async e => {
+    const del = e.target.closest("[data-del]"); if (!del) return;
+    const key = del.dataset.del;
+    if (pending !== key) { arm(key); return; }
+    disarm();
+    const [kind, docId, id] = key.slice(5).split("|");
+    if (await guarded(() => deleteIdea(kind === "p", docId, id))) toast("Idea deleted.");
+    render();
+  });
+
+  $("backup-btn").addEventListener("click", async () => {
+    if (!PLATFORM.saveFile) return;
+    try { await PLATFORM.saveFile(`walk-the-equator-backup-${todayStr()}.json`, buildBackup()); toast("Backup saved."); }
+    catch (e) { const c = e && e.code; if (c !== "declined") toast(c === "unavailable" || c === "not_granted" ? "Downloads aren't available here." : "Couldn't save the backup. Try again."); }
+  });
+  $("import-btn").addEventListener("click", async () => {
+    if (!pendingImport) { $("import-file").value = ""; $("import-file").click(); return; }
+    const data = pendingImport.data; pendingImport = null; clearTimeout(armTimer);
+    $("import-btn").disabled = true;
+    const ok = await guarded(() => importBackup(data));
+    $("import-btn").disabled = false;
+    if (ok) toast("Backup imported."); render();
+  });
+  $("import-file").addEventListener("change", async () => {
+    const f = $("import-file").files && $("import-file").files[0]; if (!f) return;
+    let data = null; try { data = JSON.parse(await f.text()); } catch (e) { data = null; }
+    if (!data || data.app !== "walk-the-equator") { toast("That file isn't a Walk the Equator backup."); return; }
+    const walks = Object.values(data.logs || {}).reduce((n, l) => n + Object.keys((l && l.days) || {}).length, 0);
+    pendingImport = { data, walkers: Object.keys(data.walkers || {}).length, walks };
+    clearTimeout(armTimer); armTimer = setTimeout(() => { pendingImport = null; render(); }, 8000);
+    render();
+  });
+
+  // ================= boot =================
+  const today = todayStr();
+  $("log-date").value = today; $("log-date").max = today;
+  render();
+
+  /*BOOT-START*/
+  // ---- Firebase version: Google sign-in + Firestore. Settings live in config.js. ----
+  (async () => {
+    const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
+    const bar = $("authbar");
+    const NOT_SET = "This site isn't connected to Firebase yet. Paste your Firebase config into config.js (Step 5 of the guide).";
+    const BAD_DOMAIN = "Google sign-in isn't allowed on this address yet. Add it under Authorized domains in Firebase (Step 6 of the guide).";
+    let cfg = null;
+    try { cfg = (await import("./config.js")).default; } catch (e) { cfg = null; }
+    if (!cfg || !cfg.apiKey || cfg.apiKey === "REPLACE_ME") { statusMsg = NOT_SET; phase = "nodb"; render(); return; }
+    let FA, FB, FS;
+    try { [FA, FB, FS] = await Promise.all([import(SDK + "firebase-app.js"), import(SDK + "firebase-auth.js"), import(SDK + "firebase-firestore.js")]); }
+    catch (e) { statusMsg = "Couldn't load Firebase. Check your internet connection and reload the page."; phase = "nodb"; render(); return; }
+    const app = FA.initializeApp(cfg), auth = FB.getAuth(app), fs = FS.getFirestore(app);
+    const provider = new FB.GoogleAuthProvider();
+
+    // A thin layer so the page talks to Firestore the same way it talked to claude.ai.
+    const mapErr = e => { const c = e && e.code; return { code: c === "permission-denied" ? "permission_denied" : c === "unavailable" ? "unavailable" : c === "resource-exhausted" ? "resource_exhausted" : (c || "unknown"), message: e && e.message }; };
+    const w = p => p.catch(e => { throw mapErr(e); });
+    const wrap = s => ({ id: s.id, exists: s.exists(), data: () => s.data() });
+    const docApi = ref => ({
+      id: ref.id, path: ref.path,
+      get: async () => wrap(await w(FS.getDoc(ref))),
+      set: d => w(FS.setDoc(ref, d)),
+      update: d => w(FS.setDoc(ref, d, { merge: true })),
+      delete: () => w(FS.deleteDoc(ref))
+    });
+    const fdb = {
+      doc: p => docApi(FS.doc(fs, p)),
+      collection: p => ({
+        doc: id => docApi(id ? FS.doc(fs, p, id) : FS.doc(FS.collection(fs, p))),
+        onSnapshot: (next, err) => FS.onSnapshot(FS.collection(fs, p), qs => next({ docs: qs.docs.map(wrap) }), e => err && err(mapErr(e)))
+      })
+    };
+
+    PLATFORM.canImport = true;
+    PLATFORM.saveFile = async (name, text) => {
+      const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+      const a = document.createElement("a"); a.href = url; a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      return { status: "saved" };
+    };
+
+    let unsubs = [];
+    const stopAll = () => { unsubs.forEach(u => { try { u(); } catch (e) {} }); unsubs = []; walkers.clear(); logs.clear(); sharedIdeas.clear(); privIdeas.clear(); };
+    const signIn = async () => {
+      try { await FB.signInWithPopup(auth, provider); }
+      catch (e) {
+        const c = e && e.code;
+        if (c === "auth/popup-blocked" || c === "auth/operation-not-supported-in-this-environment" || c === "auth/web-storage-unsupported") {
+          try { await FB.signInWithRedirect(auth, provider); } catch (e2) { toast("Couldn't open Google sign-in. Try again."); }
+        } else if (c === "auth/unauthorized-domain") { statusMsg = BAD_DOMAIN; render(); }
+        else if (c !== "auth/popup-closed-by-user" && c !== "auth/cancelled-popup-request") toast("Sign-in didn't work. Try again.");
+      }
+    };
+    const drawBar = u => {
+      bar.textContent = ""; bar.hidden = false;
+      if (u) {
+        const out = el("button", "link", "Sign out"); out.type = "button";
+        out.addEventListener("click", () => FB.signOut(auth));
+        bar.append(el("span", "who", "Signed in as " + (u.email || u.displayName || "you")), out);
+      } else {
+        const b = el("button", "primary", "Sign in with Google"); b.type = "button";
+        b.addEventListener("click", signIn); bar.appendChild(b);
+      }
+    };
+    FB.getRedirectResult(auth).catch(e => { if (e && e.code === "auth/unauthorized-domain") { statusMsg = BAD_DOMAIN; render(); } });
+
+    FB.onAuthStateChanged(auth, u => {
+      stopAll(); drawBar(u);
+      if (!u) { db = null; myId = null; readOnly = false; statusMsg = "Sign in with Google to see the walk and log walks."; phase = "nodb"; render(); return; }
+      db = fdb; myId = u.uid; canWrite = null; readOnly = false; statusMsg = ""; phase = "loading"; render();
+      let gotW = false, gotL = false;
+      const live = () => { if (gotW && gotL && phase !== "error" && phase !== "nodb") phase = "live"; render(); };
+      const onErr = err => {
+        if (err && err.code === "permission_denied") {
+          stopAll(); db = null;
+          statusMsg = `Your account (${u.email || "this account"}) isn't on the guest list yet. Ask the site's owner to add it in Firebase.`;
+          phase = "nodb";
+        } else phase = "error";
+        render();
+      };
+      const fill = (map, snap, test) => { map.clear(); snap.docs.forEach(d => { if (d.exists && (!test || test(d.id))) map.set(d.id, Object.assign({ id: d.id }, d.data())); }); };
+      unsubs.push(fdb.collection("walkers").onSnapshot(s => { fill(walkers, s); gotW = true; live(); }, onErr));
+      unsubs.push(fdb.collection("logs").onSnapshot(s => { fill(logs, s); gotL = true; live(); }, onErr));
+      unsubs.push(fdb.collection("ideas").onSnapshot(s => { fill(sharedIdeas, s); render(); }, () => {}));
+      unsubs.push(fdb.collection("data/users/" + myId).onSnapshot(s => { fill(privIdeas, s, id => id.startsWith("ideas-")); render(); }, () => {}));
+    });
+  })();
+  /*BOOT-END*/
+})();
+</script>
+</body>
+</html>
